@@ -77,6 +77,9 @@ class Worker:
   self.lib.hil_worker_drain.argtypes=[C.POINTER(Trace),C.c_uint32]
   self.lib.hil_io_command.argtypes=[C.c_void_p,C.c_uint32]
   self.lib.hil_io_config.argtypes=[C.c_uint64,C.c_uint32]
+  if hasattr(self.lib,"hil_io_flat_rangefinder"):
+   self.lib.hil_io_flat_rangefinder.argtypes=[C.c_uint32]
+   self.lib.hil_io_range_count.restype=C.c_uint64
   self.lib.hil_io_encode.argtypes=[C.POINTER(Output),C.c_uint64,C.c_void_p,C.c_uint32,C.c_uint32]
   self.lib.hil_io_drain.argtypes=[C.POINTER(Packet),C.c_uint32]
   self.lib.hil_io_stats.argtypes=[C.POINTER(IoStats)]

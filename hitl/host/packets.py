@@ -11,7 +11,8 @@ def baro_metadata(pressure_pa,fields):
  temperature_k=288.15*(pressure_pa/101325.)**0.1902632365084836
  return (288.15-temperature_k)/.0065,temperature_k-273.15,fields|0x1800
 class Encoder:
- def __init__(self,quality):
+ def __init__(self,quality,flat_rangefinder=False):
+  self.flat_rangefinder=flat_rangefinder
   self.writer=mav.MAVLink(None,srcSystem=2,srcComponent=51);self.quality=quality;self.gps_time=None;self.heartbeat_time=None
  def encode(self,o,epoch_us):
   # Validate all physical and wire fields before packing any message.
@@ -24,6 +25,12 @@ class Encoder:
    lat,lon,alt=o.gps_lla_msl;q=self.quality
    msgs.append(mav.MAVLink_hil_gps_message(epoch_us+o.gps_sample_time_ns//1000,q['fix_type'],integer(lat,1e7,-900000000,900000000,'latitude'),integer(lon,1e7,-1800000000,1800000000,'longitude'),integer(alt,1000,-2147483648,2147483647,'altitude'),q['eph_cm'],q['epv_cm'],integer(o.ground_speed_m_s,100,0,65534,'ground speed'),*[integer(v,100,-32768,32767,'NED velocity') for v in o.velocity_ned_m_s],round(o.course_deg*100)%36000,q['satellites']))
   if self.heartbeat_time is None or o.model_time_ns-self.heartbeat_time>=1000000000:msgs.append(mav.MAVLink_heartbeat_message(1,12,0,0,0,3))
+  if self.flat_rangefinder and o.model_time_ns%40000000==0:
+   pitch,roll,agl=o.raw_source[11],o.raw_source[12],o.raw_source[19]
+   down=math.cos(pitch)*math.cos(roll)
+   distance=agl/down if down>0 else float('nan')
+   valid=all(math.isfinite(v) for v in [pitch,roll,agl,distance]) and agl>=0 and .05<=distance<=150
+   msgs.append(mav.MAVLink_distance_sensor_message((stamp//1000)&0xffffffff,5,15000,round(distance*100) if valid else 15001,0,0,25,255,0,0,[0,0,0,0],100 if valid else 1))
   frames=[]
   for msg in msgs:
    frames.append((msg.get_type(),msg.pack(self.writer)));self.writer.seq=(self.writer.seq+1)%256

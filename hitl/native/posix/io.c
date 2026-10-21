@@ -1,4 +1,5 @@
 #include "hil_model_api.h"
+#include "plant_flat_ground.h"
 #include <pthread.h>
 #include <stdint.h>
 #include <string.h>
@@ -16,8 +17,13 @@ static pthread_mutex_t mutex=PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t condition=PTHREAD_COND_INITIALIZER;
 static pthread_t sender;
 static int fd=-1,started,stopping,enabled,inflight,command_inflight;
-static Packet latest[3],commands[128],records[CAP];
-static int pending[3];
+static Packet latest[4],commands[128],records[CAP];
+static int pending[4];
+static int flat_rangefinder;
+static uint64_t range_sent;
+EXPORT uint64_t hil_io_range_count(void){pthread_mutex_lock(&mutex);uint64_t n=range_sent;pthread_mutex_unlock(&mutex);return n;}
+/* Called only by management before worker start; no running configuration changes. */
+EXPORT void hil_io_flat_rangefinder(uint32_t enabled_value){pthread_mutex_lock(&mutex);flat_rangefinder=enabled_value==1;range_sent=0;pthread_mutex_unlock(&mutex);}
 static uint64_t read_cmd,write_cmd,read_log,write_log,epoch_us;
 static uint8_t sequence;
 static uint16_t eph=30,epv=50;
@@ -74,6 +80,19 @@ EXPORT int hil_io_encode(const HilModelOutput *o,uint64_t epoch,uint8_t *out,uin
   int64_t cog=llrint(o->course_deg*100)%36000;if(cog<0)cog+=36000;u16(p+32,cog);p[34]=fix;p[35]=satellites;packet=frame(113,124,p,39,2);
   if(length+packet.len>capacity)return -4;memcpy(out+length,packet.bytes,packet.len);length+=packet.len;
  }
+ /* Explicit SkySurfer truth layout: r[19] AGL, r[11/12] pitch/roll.
+    FRD body-down rotated into NED; yaw cannot change horizontal-plane range. */
+ if(flags&4){
+  double pitch=o->raw_source[11],roll=o->raw_source[12],agl=o->raw_source[19],range;
+  double ray[]={sin(pitch)*cos(roll),-sin(roll),cos(pitch)*cos(roll)};
+  int valid=plant_flat_ground_range_m(-agl,ray,.05,150.,&range);
+  memset(p,0,sizeof(p));u32(p,(uint32_t)((epoch+o->model_time_ns/1000)/1000));
+  u16(p+4,5);u16(p+6,15000);u16(p+8,valid?(uint16_t)llrint(range*100):15001);
+  p[10]=0; /* laser */ p[11]=0;p[12]=25; /* body downward */ p[13]=255; /* variance unknown */
+  p[38]=valid?100:1; /* MAVLink 1 means quality zero, 0 means unknown */
+  packet=frame(132,85,p,39,4);
+  if(length+packet.len>capacity)return -4;memcpy(out+length,packet.bytes,packet.len);length+=packet.len;
+ }
  if(flags&2){memset(p,0,9);p[4]=1;p[5]=12;p[8]=3;packet=frame(0,50,p,9,3);if(length+packet.len>capacity)return -4;memcpy(out+length,packet.bytes,packet.len);length+=packet.len;}
  return length;
 }
@@ -84,11 +103,11 @@ static void *send_loop(void *unused){
 #endif
  for(;;){
   pthread_mutex_lock(&mutex);
-  while(!stopping&&read_cmd==write_cmd&&!pending[0]&&!pending[1]&&!pending[2])pthread_cond_wait(&condition,&mutex);
+  while(!stopping&&read_cmd==write_cmd&&!pending[0]&&!pending[1]&&!pending[2]&&!pending[3])pthread_cond_wait(&condition,&mutex);
   if(stopping){pthread_mutex_unlock(&mutex);break;}
   Packet p={0};
   if(read_cmd<write_cmd)p=commands[read_cmd++%128];
-  else for(int k=0;k<3;k++)if(pending[k]){p=latest[k];pending[k]=0;break;}
+  else for(int k=0;k<4;k++)if(pending[k]){p=latest[k];pending[k]=0;break;}
   inflight=p.kind>0;command_inflight=p.kind==0;pthread_mutex_unlock(&mutex);
   IoEvent event={.begin_ns=hil_worker_now_ns(),.packet_stamp_ns=p.stamp,.len=p.len,.kind=p.kind};
   uint32_t offset=0;
@@ -113,7 +132,7 @@ static void *send_loop(void *unused){
   inflight=command_inflight=0;pthread_cond_broadcast(&condition);
   if(offset!=p.len){stats.errors++;enabled=0;read_cmd=write_cmd;memset(pending,0,sizeof(pending));}
   else {
-   if(p.kind==1)stats.sensor++;else if(p.kind==2)stats.gps++;else if(p.kind==3)stats.heartbeat++;else stats.commands++;
+   if(p.kind==1)stats.sensor++;else if(p.kind==2)stats.gps++;else if(p.kind==3)stats.heartbeat++;else if(p.kind==4)range_sent++;else stats.commands++;
    p.stamp=hil_worker_now_ns();
    if(write_log-read_log<CAP)records[write_log++%CAP]=p;else stats.log_drops++;
   }
@@ -123,7 +142,7 @@ static void *send_loop(void *unused){
 }
 EXPORT int hil_io_start(int serial_fd){
  if(started||serial_fd<0)return 2;
- fd=serial_fd;stopping=enabled=0;read_cmd=write_cmd=read_log=write_log=0;memset(pending,0,sizeof(pending));memset(&stats,0,sizeof(stats));event_read=event_write=event_drops=0;memset(&last_event,0,sizeof(last_event));started=1;
+ fd=serial_fd;stopping=enabled=flat_rangefinder=0;range_sent=0;read_cmd=write_cmd=read_log=write_log=0;memset(pending,0,sizeof(pending));memset(&stats,0,sizeof(stats));event_read=event_write=event_drops=0;memset(&last_event,0,sizeof(last_event));started=1;
  if(pthread_create(&sender,NULL,send_loop,NULL)){started=0;return 3;}return 0;
 }
 EXPORT void hil_io_config(uint64_t epoch,uint32_t quality){pthread_mutex_lock(&mutex);epoch_us=epoch;sequence=0;fix=quality&255;satellites=(quality>>8)&255;eph=30;epv=50;enabled=1;pthread_mutex_unlock(&mutex);}
@@ -135,9 +154,9 @@ int hil_io_publish(const HilModelOutput *o){
  pthread_mutex_lock(&mutex);if(!started){pthread_mutex_unlock(&mutex);return 0;}
  int fault=stats.errors?9:stats.log_drops?6:0;
  if(fault||!enabled){pthread_mutex_unlock(&mutex);return fault;}
- uint8_t buffer[280];int length=hil_io_encode(o,epoch_us,buffer,sizeof(buffer),(o->gps_updated?1:0)|(o->model_time_ns%1000000000==0?2:0));
+ uint8_t buffer[280];int length=hil_io_encode(o,epoch_us,buffer,sizeof(buffer),(o->gps_updated?1:0)|(o->model_time_ns%1000000000==0?2:0)|(flat_rangefinder&&o->model_time_ns%40000000==0?4:0));
  if(length<0){enabled=0;pthread_mutex_unlock(&mutex);return 4;}
- for(int index=0;index<length;){int len=buffer[index+1]+12;uint32_t id=buffer[index+7];int kind=id==107?0:id==113?1:2;
+ for(int index=0;index<length;){int len=buffer[index+1]+12;uint32_t id=buffer[index+7];int kind=id==107?0:id==113?1:id==132?3:2;
   if(pending[kind])stats.replaced++;Packet*p=&latest[kind];memset(p,0,sizeof(*p));p->stamp=hil_worker_now_ns();p->kind=kind+1;p->len=len;memcpy(p->bytes,buffer+index,len);pending[kind]=1;index+=len;}
  pthread_cond_signal(&condition);pthread_mutex_unlock(&mutex);return 0;
 }

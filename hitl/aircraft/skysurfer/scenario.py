@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'plant'))
 import wind as plant_wind
 from host.abi import header,Initial
-ALLOWED={'schema_version','aircraft_id','name','height_agl_m','velocity_mode','tas_m_s','body_velocity_m_s','alpha_deg','beta_deg','euler_deg','latitude_deg','longitude_deg','site_msl_m','geoid_separation_m','wind_ned_m_s','wind','angular_rates_rad_s','seed_policy','carrier'}
+ALLOWED={'schema_version','aircraft_id','name','height_agl_m','velocity_mode','tas_m_s','body_velocity_m_s','alpha_deg','beta_deg','euler_deg','latitude_deg','longitude_deg','site_msl_m','geoid_separation_m','wind_ned_m_s','wind','angular_rates_rad_s','seed_policy','carrier','flat_rangefinder'}
 def load_scene(value):
  scene=json.loads(Path(value).read_text()) if isinstance(value,(str,Path)) else dict(value)
  unknown=set(scene)-ALLOWED
@@ -12,6 +12,7 @@ def load_scene(value):
  for name in ['site_msl_m','geoid_separation_m','seed_policy']:
   if scene.get(name,0)!=0:raise ValueError(name+' is unsupported by this source recipe; supported value is 0')
  if scene.get('angular_rates_rad_s',[0,0,0])!=[0,0,0]:raise ValueError('angular_rates_rad_s is unsupported by this source recipe')
+ if "flat_rangefinder" in scene and type(scene["flat_rangefinder"]) is not bool:raise ValueError("flat_rangefinder must be boolean")
  load_wind(scene)  # malformed wind is rejected here, before anything starts
  def number(name,default,lo,hi):
   v=scene.get(name,default)

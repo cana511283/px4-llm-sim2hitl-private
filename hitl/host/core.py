@@ -716,6 +716,7 @@ class Core(SdFiles):
             native_metrics = {
                 'tx_HIL_SENSOR': native['sensor'],
                 'tx_HIL_GPS': native['gps'],
+                'tx_DISTANCE_SENSOR': self.worker.lib.hil_io_range_count() if hasattr(self.worker.lib, 'hil_io_range_count') else 0,
                 'tx_HEARTBEAT': native['heartbeat'],
                 'serial_errors': native['errors'],
                 'serial_max_write_ms': native['max_write_ns'] / 1e6,
@@ -1852,6 +1853,11 @@ class Core(SdFiles):
                 new.get('height_agl_m', 0) != 0 or any(initial.body_velocity_m_s)
             ):
                 raise ValueError('Air-start currently supports offline validation only')
+            flat_rangefinder = new.get('flat_rangefinder', False)
+            if flat_rangefinder and (new['aircraft_id'] != 'skysurfer' or not self.model.info.capabilities & 8 or self.model.info.raw_count != 58):
+                raise PreconditionError('Flat rangefinder requires the SkySurfer truth layout')
+            if flat_rangefinder and not hasattr(self.worker.lib, 'hil_io_flat_rangefinder'):
+                raise PreconditionError('Update model release for flat rangefinder support')
             wind, reminders = load_wind(new)
             self.scene, self.initial = new, initial
             self.model.check(self.model.lib.hil_model_reset(C.byref(initial)))
@@ -1871,7 +1877,7 @@ class Core(SdFiles):
             self.control_sequence = 0
             self.last_control_frame = None
             self.last_output = 0
-            self.encoder = Encoder(self.profile['gps_quality'])
+            self.encoder = Encoder(self.profile['gps_quality'], flat_rangefinder=flat_rangefinder)
             self.live_sent = False
             self.error = None
             self.run_id = str(uuid.uuid4())
@@ -1890,6 +1896,8 @@ class Core(SdFiles):
             )
             if self.native_io:
                 self.worker.lib.hil_io_config(self.model_epoch_us, 3 | (10 << 8))
+                if hasattr(self.worker.lib, 'hil_io_flat_rangefinder'):
+                    self.worker.lib.hil_io_flat_rangefinder(int(flat_rangefinder))
             if self.fc_generation != generation or self.fc['state'] != 'verified':
                 raise PreconditionError('FC connection changed during model initialization')
             self._block_external('model start')

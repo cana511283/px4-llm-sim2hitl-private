@@ -114,7 +114,7 @@ def compile_library(cache,fp):
  (cache/'results/build.json').write_text(json.dumps({'build_id':build_id,'fingerprint':fp,'generated':generated,'toolchain':toolchain_id,'command':cmd},indent=2));return build_id
 WORKER_SOURCES=['native/posix/worker.c','native/posix/io.c']  # POSIX; clock and scheduling per platform inside
 def worker_command(out):
- sources=[str(RUNTIME/x) for x in WORKER_SOURCES];inc=['-I',str(RUNTIME/'interface')]
+ sources=[str(RUNTIME/x) for x in WORKER_SOURCES];inc=['-I',str(RUNTIME/'interface'),'-I',str(PLANT/'include')]
  return toolchain.cc()+['-std=c11','-O2','-D_GNU_SOURCE','-fvisibility=hidden','-pthread']+toolchain.shared_flags()+inc+sources+['-lm','-o',str(out/toolchain.lib('hil_worker'))]
 def compile_worker(out):
  cmd=worker_command(out);subprocess.run(cmd,check=True);return Path(cmd[-1]),cmd
@@ -147,7 +147,7 @@ def fc_only(cache=None):
  pid=platform_id();cache=Path(cache or toolchain.cache_root()/'fc_only_build');(cache/'native').mkdir(parents=True,exist_ok=True)
  path,cmd=compile_worker(cache/'native')
  compiler=toolchain.compiler_version()
- identity={'platform':pid,'sources':{x:digest(RUNTIME/x) for x in WORKER_SOURCES+['interface/hil_model_api.h','host/abi.py','update.py']},'command':cmd[:-1],'compiler':compiler}
+ identity={'platform':pid,'sources':{x:digest(RUNTIME/x) for x in WORKER_SOURCES+['interface/hil_model_api.h','host/abi.py','update.py']},'ground_geometry_sha256':digest(PLANT/'include/plant_flat_ground.h'),'command':cmd[:-1],'compiler':compiler}
  build_id='fc-only-'+hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()[:24]
  result=validate_worker(path);(cache/'worker_validation.json').write_text(json.dumps(dict(result,build_id=build_id),indent=2))
  if result['status']!='PASS':raise RuntimeError('Worker validation failed '+json.dumps(result['checks'])+'; active unchanged')

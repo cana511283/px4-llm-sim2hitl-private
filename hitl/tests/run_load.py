@@ -13,7 +13,7 @@ from host.transport import FakePTY
 from host.ipc import Endpoint,request
 
 def main():
- parser=argparse.ArgumentParser(description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter);parser.add_argument('output',type=Path);parser.add_argument('--duration',type=float,default=300);parser.add_argument('--peer-mode',choices=['thread','process'],default='thread');parser.add_argument('--gil-pause-at',type=float);parser.add_argument('--gil-pause-ms',type=int,default=350);args=parser.parse_args()
+ parser=argparse.ArgumentParser(description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter);parser.add_argument('output',type=Path);parser.add_argument('--scene',type=Path);parser.add_argument('--duration',type=float,default=300);parser.add_argument('--peer-mode',choices=['thread','process'],default='thread');parser.add_argument('--gil-pause-at',type=float);parser.add_argument('--gil-pause-ms',type=int,default=350);args=parser.parse_args()
  if not 1<=args.duration<=1800:parser.error('duration must be 1..1800 seconds')
  out=args.output;out.mkdir(parents=True,exist_ok=False)
  sockets=[];ports=[]
@@ -41,7 +41,7 @@ def main():
   while True:
    time.sleep(.1)
    if start is None:
-    if core.status()['ready_to_start_model']:core.start();start=time.monotonic()
+    if core.status()['ready_to_start_model']:core.start(args.scene);start=time.monotonic()
     elif time.monotonic()-startup>10:errors.append('FC startup timeout');break
     continue
    elapsed=time.monotonic()-start;s=core.status()

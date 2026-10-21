@@ -104,6 +104,8 @@ IMU 的 noise density 換成每筆標準差：σ = density·√(1/(2·dt))。沒
 
 ## 地面
 
+平面幾何查詢及向下射線交點介面見 [terrain/README.md](terrain/README.md)。HIL 可選平面向下測距；封包已接入 C writer，Cube EKF 與降落尚待驗證。
+
 模型的地面是很簡化的一塊（`UAV/UAV/Ground Model`，參數在 `model/FW_SkySurfer_InitialFunction.m` 的 `uavData.contact`）。看起飛、落地的結果或換飛機前要知道：
 
 - **只有一個接觸點，就在重心**：沒有輪子、起落架、機腹的位置。地面是一整片平地，就在模型位置的高度 0（場景的離地高度 `height_agl_m` 從這裡量），沒有地形。
