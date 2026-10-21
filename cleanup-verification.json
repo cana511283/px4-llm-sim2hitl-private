@@ -1,0 +1,24 @@
+{
+  "fc_identity_matches": true,
+  "mission_items_match": true,
+  "parameter_differences": {
+    "CAL_BARO2_OFF": {
+      "before": -7.32421875,
+      "after": 4.8828125
+    },
+    "COM_FLIGHT_UUID": {
+      "before": 620,
+      "after": 621
+    },
+    "LND_FLIGHT_T_LO": {
+      "before": -1950552672,
+      "after": -1471727494
+    }
+  },
+  "armed": false,
+  "SYS_HITL": 1,
+  "recovery_required": false,
+  "param_deploy_pending": null,
+  "scale_restoration": "PASS",
+  "non_fc_owned_differences": []
+}

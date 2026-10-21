@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-22",
+  "source_commit": "9ea1a9674acd57d9d237adcdad19c9d845de49c7",
+  "fc_log_id": 357,
+  "fc_log_sha256": "a30ea19a95e8f4400c51bf74ae0e9cdaea92c6e429956fb83da699caf9b63fbc",
+  "duplicate_download_verified": true,
+  "files": {
+    "cleanup-verification.json": {
+      "bytes": 503,
+      "sha256": "f50169ba1f2e67df06385852832af37c06205affca29653df81575287d5a32dc"
+    },
+    "source-flat-range.zip": {
+      "bytes": 6257970,
+      "sha256": "d7324cbf0fe5d0d6d7a1faa9ae38653a857288f517519c397b83e5066bbe1f24"
+    },
+    "carrier-flat-range.bundle": {
+      "bytes": 6321786,
+      "sha256": "380802c463d619114cce9c0c811544a29df90bc0ebc4816127fbacf937802f97"
+    },
+    "hil-agent-wire.zip.part02": {
+      "bytes": 1507100,
+      "sha256": "cec66b6ee1d01526ea2b0368def12a59a4ef4e1744f007acb163c59e0a9c782d"
+    },
+    "hil-agent-wire.zip.part01": {
+      "bytes": 8000000,
+      "sha256": "917316325a04111aba9ee4ed46688fab325d93a242a0dbae681b3c0008d8a0ab"
+    },
+    "trajectory.png": {
+      "bytes": 353930,
+      "sha256": "edd03ea575a2ba25433762a36bc1b117e4d603b25259cc68ffb6944f7fd00663"
+    },
+    "hil-native-wire-and-timing.zip.part02": {
+      "bytes": 8000000,
+      "sha256": "9f66b54a279893c995b14b57671d96e0729818b15a7fdb8cb650ff2f89d61dda"
+    },
+    "fc-log-357.zip.part02": {
+      "bytes": 8000000,
+      "sha256": "19c493cf2c9f80986df260b626b75a56e08979739559b17ef6d1de33ff57e90b"
+    },
+    "mission-settings.zip": {
+      "bytes": 11526,
+      "sha256": "4b7ea644a49b303a02bed79d8e86dea9d5da95913d0158a403219148a1dfa942"
+    },
+    "hil-reports-and-settings.zip.part01": {
+      "bytes": 8000000,
+      "sha256": "b16e288628eb03d3c6d5e9f4c9fa7a343da7846cb93d3969eb618a306b60415c"
+    },
+    "fc-log-357.zip.part03": {
+      "bytes": 5536573,
+      "sha256": "f6509a060c0f8f878137b66b859860e6ed4a832c4e2c343a3103ced444a259f2"
+    },
+    "hil-native-wire-and-timing.zip.part03": {
+      "bytes": 3406872,
+      "sha256": "a964cc766f74d9d0c58e5bd89be1c278032235995b009a759baad67b88e974c7"
+    },
+    "hil-reports-and-settings.zip.part02": {
+      "bytes": 7925643,
+      "sha256": "50d6197ffc2266bbc65a25611483f6bf74c56095b10ed6c64127dd865a358029"
+    },
+    "README.md": {
+      "bytes": 3029,
+      "sha256": "d32b734b425b444b9ee2c4eb2584f014708768f71b307bcf5bdbf80b90b8432c"
+    },
+    "fc-log-357.zip.part01": {
+      "bytes": 8000000,
+      "sha256": "e1061c67d5184c222fde19b8960ae1d5306755756c4ddf59d0a6c31a6dc9c39d"
+    },
+    "hil-native-wire-and-timing.zip.part01": {
+      "bytes": 8000000,
+      "sha256": "e47dd4ddf813ef016b4f845f581bed12c5ea8f7b87ee476984264ded5a282b6e"
+    },
+    "flight-analysis.json": {
+      "bytes": 1631,
+      "sha256": "f2d6db91d49d904d43abce817619513abdd623e9f54f998eee30c6234f631c4b"
+    }
+  },
+  "multipart_archives": {
+    "fc-log-357.zip": {
+      "parts": [
+        "fc-log-357.zip.part01",
+        "fc-log-357.zip.part02",
+        "fc-log-357.zip.part03"
+      ],
+      "sha256": "9a876ae878a0a69b89a916cec209ed5c59fc626a5ddaa07cfd3f539cadf985a5",
+      "bytes": 21536573
+    },
+    "hil-reports-and-settings.zip": {
+      "parts": [
+        "hil-reports-and-settings.zip.part01",
+        "hil-reports-and-settings.zip.part02"
+      ],
+      "sha256": "e7411b9591c793f04d3935edea4da3fd72c6dae91a99fd22931ea161373ea76f",
+      "bytes": 15925643
+    },
+    "hil-agent-wire.zip": {
+      "parts": [
+        "hil-agent-wire.zip.part01",
+        "hil-agent-wire.zip.part02"
+      ],
+      "sha256": "0f437159094e73ddb75101a80a6f96ce306fd12dbced8d8081d59fcf53c2997f",
+      "bytes": 9507100
+    },
+    "hil-native-wire-and-timing.zip": {
+      "parts": [
+        "hil-native-wire-and-timing.zip.part01",
+        "hil-native-wire-and-timing.zip.part02",
+        "hil-native-wire-and-timing.zip.part03"
+      ],
+      "sha256": "f6e4cb22b1bb7a3a0a2e8f645f72c9387fef4ec6803340d1be782f3c10aa116a",
+      "bytes": 19406872
+    }
+  }
+}
