@@ -60,3 +60,5 @@
 釋放標記以 owner 首次回報 carrier_phase=3 的時間，對齊同次 agent-wire 記錄的 ATTITUDE 開機時鐘；最近封包相差約 1.3 ms，標記仍有狀態輪詢與傳輸延遲，不能當成精確分離時刻。FC 記錄 355 比測試前最新記錄 354 新，兩次下載 SHA256 都是 `3d24a1a178f89529f8ffe23ebf5fbe609a0062abe9b217971b4fd4735dcdce49`，嚴格解析通過。完整 log／圖表留在本機 `outputs/carrier-hitl-20261021-02`，不隨原始碼上傳。
 
 離線發布六項檢查全部 PASS，含新增十秒定速差壓卡值回歸與固定種子重現。SITL 對照使用此修正前的相同動力學：最低高度約 82.05 m、俯仰 -6.64° 至 +3.26°；SITL 為真值，HITL 為 EKF，未訂定差異驗收門檻，不能由這組數字宣稱兩者等效。
+
+第二階段的原生 AUTO 五邊與盤旋降落已完成 SITL 預演，尚未上 Cube；它是另一個 `carrier-circuit-run` 指令，詳見 [missions README](../missions/README.md)。此處第一階段的 40 s 觀察結果與範圍維持不變。

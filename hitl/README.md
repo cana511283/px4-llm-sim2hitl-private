@@ -124,3 +124,7 @@ for f in hitl/tests/test_*.py deploy/test_*.py; do "$PY" -B "$f"; done
 本機新增的實驗路線，規格與限制見 [carrier_release.md](carrier_release.md)。它仍從地面靜止、未解鎖開始；不放寬實體空中初始化的限制。母機是無風、朝北、水平姿態的運動約束，不是另一架有氣動模型的飛機。模型的 carrier 計時只在實體 FC 明確回報 armed 後開始；未知／未解鎖不啟動攜帶，開始後失去 armed 確認就 fault。沒有改 PX4 的解鎖檢查。
 
 首次實體測試須先完成離線及 SITL，並依 AGENTS 取得首次新算法上 FC 的確認。此路線不沿用「起飛後盤旋」的驗收：`carrier-run` 有界執行、標準停止及恢復、參數前後核對、新飛控記錄歸屬核對／下載兩次／嚴格解析；飛行品質只報告，未約定門檻不能判穩定 PASS。
+
+## 母機釋放後飛五邊與盤旋降落
+
+第二階段的 `carrier-circuit-run` 使用原生 AUTO_MISSION，會暫時部署兩項配平參數及航點；先備份，結束後用原值還原，再核對新 log。首次新任務上 FC 前須人確認。規格、SITL 結果與限制見 [missions README](../missions/README.md)。原來的 `carrier-run` 仍只做釋放後 40 s 姿態觀察。

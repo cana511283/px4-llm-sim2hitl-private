@@ -74,7 +74,9 @@ SIM_IMU_ID = 1310988  # DRV_IMU_DEVTYPE_SIM, bus 1, address 1 (plant_sim's PX4Ac
 COMMON = ['sensors start', 'pwm_out_sim start -m sim', 'control_allocator start', 'fw_rate_control start']
 MODULES = {'acro': COMMON, 'stabilized': COMMON + ['fw_att_control start'],
            # OFFBOARD (velocity): PX4's own altitude/speed control under a guidance module started by "start"
-           'offboard': COMMON + ['fw_att_control start', 'fw_lat_lon_control start']}
+           'offboard': COMMON + ['fw_att_control start', 'fw_lat_lon_control start'],
+           'mission': ['dataman start'] + COMMON + ['fw_att_control start', 'fw_lat_lon_control start',
+                                                      'fw_mode_manager start', 'navigator start']}
 
 
 def read_params(path):
@@ -170,6 +172,12 @@ def scenario_text(scenario, params):
         if scenario.get('wind') is not None or scenario.get('trim') or initial['height_agl_m'] != 0 or airspeed != 0 or initial.get('heading_deg', 0) != 0:
             raise ValueError('carrier phase one requires north-facing ground start, no trim and no wind')
         lines.append('carrier ' + ' '.join(format(v, '.12g') for v in values))
+    if scenario.get('native_carrier_circuit'):
+        if scenario['mode'] != 'mission' or 'carrier' not in scenario:
+            raise ValueError('native circuit requires mission mode and carrier')
+        sys.path.insert(0, str(ROOT / 'missions'))
+        from carrier_circuit import sitl_lines
+        lines.extend(sitl_lines())
     settle = scenario.get('settle_s', 0.0)  # step times in the JSON are counted after the settling time
     for step in scenario.get('steps', []):
         lines.append('step {:.9g} {:.9g} {:.9g} {:.9g} {:.9g} {:.9g}'.format(
@@ -279,6 +287,10 @@ def main():
     if args.ulog:
         params['SDLOG_PROFILE'] = read_params(NATIVE / 'hitl_overrides.params')['SDLOG_PROFILE']
     scenario = json.loads(args.scenario.read_text())
+    if scenario.get('native_carrier_circuit'):
+        sys.path.insert(0, str(ROOT / 'missions'))
+        from carrier_circuit import PARAMETERS
+        params.update({k: (str(v), 9) for k, v in PARAMETERS.items()})
     duration = args.duration or scenario.get('settle_s', 0.0) + scenario['duration_s']
     text, trim_result, wind_reminders = scenario_text(scenario, params)
     for reminder in wind_reminders:

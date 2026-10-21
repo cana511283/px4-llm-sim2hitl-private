@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Bounded phase-one carrier release through the sole owner (no firmware/parameter writes).
+"""Bounded carrier release through the sole owner (no firmware writes).
 Requires explicit approval for the first real run. Ground start, genuine normal arming,
 continuous carrier sensors, release at configured time, then fixed Stabilized inputs.
-This records observations, not a flight-stability PASS. No mission or landing yet.
+This records observations, not a flight-stability PASS. --circuit adds native AUTO
+mission/landing with backed-up mission and transactional temporary parameters.
 """
 import argparse
 import json
@@ -24,7 +25,7 @@ from host import runtime_identity
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--scenario',type=Path,required=True);p.add_argument('--release',type=Path,required=True)
- p.add_argument('--out',type=Path,required=True);a=p.parse_args()
+ p.add_argument('--out',type=Path,required=True);p.add_argument('--circuit',action='store_true');a=p.parse_args()
  if a.out.exists():raise ValueError('Use a new output directory; previous evidence is preserved')
  scene,_=load_scene(a.scenario)
  if 'carrier' not in scene:raise ValueError('Expected an explicit carrier scenario')
@@ -33,10 +34,20 @@ def main():
   raise ValueError('First carrier test requires wait 1..30 s, climb 10..120 s, cruise 5..30 s')
  a.out.mkdir(parents=True)
  result={'scope':'carrier release, no mission or landing; performance not graded','process':'RUNNING','recovery':'NOT_RUN'}
+ def sampled_status(s):
+  if not a.circuit:return s
+  # Keep all safety/telemetry evidence. Full parameters are saved separately by
+  # readback; repeating 1979 values at 50 Hz would add gigabytes of disk I/O.
+  v=dict(s);v['parameters']={'SYS_HITL':s.get('parameters',{}).get('SYS_HITL'),
+                            'count':len(s.get('parameters',{}))}
+  return v
  def save(): (a.out/'result.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
  def call(action,args=None):
   r=request(HERE,action,args,timeout_s=1800 if action=='fetch-log' else 600 if action=='param-readback' else 90 if action=='recover' else 45)
-  with (a.out/'operations.jsonl').open('a') as f:f.write(json.dumps({'at':time.time(),'action':action,'response':r})+'\n')
+  recorded=r
+  if a.circuit and action=='status' and r['status']=='complete':
+   recorded={'status':'complete','result':sampled_status(r.get('result',r.get('operation',{}).get('result')))}
+  with (a.out/'operations.jsonl').open('a') as f:f.write(json.dumps({'at':time.time(),'action':action,'response':recorded})+'\n')
   if r['status']!='complete':raise RuntimeError(str(r))
   return r.get('result',r.get('operation',{}).get('result'))
  def readback(name):
@@ -46,7 +57,7 @@ def main():
   report=mod.check(a.release,b['path']);(a.out/(name+'-check.json')).write_text(json.dumps(report,indent=2))
   if report['verdict']!='PASS':raise RuntimeError(name+' parameter/identity check failed')
   return b
- link=None;started=False;saved_error=None
+ link=None;started=False;saved_error=None;native=None
  try:
   start=call('status');result['before']=start
   if start['fake_fc'] or start['unarmed_only'] or not start['ready_to_start_model'] or start['model']=='running' or start['pilot']['running']:
@@ -70,6 +81,10 @@ def main():
   listing=call('fetch-log',{'list':True});result['logs_before']=listing
   if not listing.get('complete'):raise RuntimeError('Incomplete initial log list')
   link=Link(14560,14576,open(a.out/'agent-wire.bin','wb'))
+  if a.circuit:
+   from native_circuit import NativeCircuit
+   native=NativeCircuit(a,call,link,b);native.prepare()
+   result['scope']='carrier release, native AUTO five-leg circuit, orbit descent and landing; performance not graded'
   # From here onward a failure always stops the model and runs standard recovery.
   started=True;call('model-start',{'scene':scene})
   v=Vehicle();phase='telemetry';phase_at=time.monotonic();begin=phase_at;hb_at=0;sent_mode=False;arm_sent=False;released_at=None
@@ -78,15 +93,18 @@ def main():
     now=time.monotonic()
     for m in link.receive():
      v.update(m,now)
+     if native:native.update(m)
      if m.get_type()=='COMMAND_ACK' and m.get_srcSystem()==TARGET[0] and m.command in [mav.MAV_CMD_COMPONENT_ARM_DISARM,mav.MAV_CMD_DO_SET_MODE] and m.result not in [0,5]:
       raise RuntimeError(f'PX4 rejected command {m.command}: {m.result}')
     if now>=hb_at:
      link.send(mav.MAVLink_heartbeat_message(mav.MAV_TYPE_GCS,mav.MAV_AUTOPILOT_INVALID,0,0,0,3));hb_at=now+1
     x,z=(pitch,throttle) if phase=='released' else (0,0)
+    if native and native.mode_sent and v.mode==4 and v.sub_mode==4:
+     x=0  # neutral pitch/roll/yaw keepalive; AUTO owns attitude and throttle
     link.send(mav.MAVLink_manual_control_message(TARGET[0],x,0,z,0,0))
     if v.pilot and now-v.seen.get('pilot',-math.inf)<.5 and max(abs(n) for n in v.pilot)>TAKEOVER_STICK:
      raise RuntimeError('QGC pilot input: stop the automatic test')
-    s=call('status');samples.write(json.dumps({'elapsed_s':now-begin,'status':s})+'\n');samples.flush()
+    s=call('status');samples.write(json.dumps({'elapsed_s':now-begin,'status':sampled_status(s)})+'\n');samples.flush()
     if s['last_error'] or s['model']!='running' or s['recovery']=='failed':raise RuntimeError('Owner model error: '+str(s['last_error']))
     if s['scheduler']['time_constraint_result']!=0 and now-begin>2:raise RuntimeError('Real-time scheduling not active')
     if s['misses'] or s['metrics'].get('serial_errors',0):raise RuntimeError('Timing miss or serial error; preserve evidence')
@@ -104,15 +122,18 @@ def main():
     elif phase=='arming' and v.armed:
      phase='carried';phase_at=now
     elif phase in ['carried','released']:
-     if not v.armed or v.mode!=STABILIZED:raise RuntimeError('Unexpected arm/mode transition')
+     if not v.armed:raise RuntimeError('Unexpected disarming')
+     if not (native and native.mode_sent) and v.mode!=STABILIZED:raise RuntimeError('Unexpected mode transition')
      cp=(s.get('model_truth') or {}).get('carrier_phase')
      if cp==3 and released_at is None:
       phase='released';released_at=now;result['release_observed']=s
       print('Carrier released; observing free-flight stabilization for 40 s',flush=True)
-     if released_at is not None and now-released_at>=40:break
+     if native and released_at is not None:
+      if native.flight_step(v,now,released_at,s):break
+     elif released_at is not None and now-released_at>=40:break
      if released_at is None and now-phase_at>release_s+5:raise RuntimeError('Release timeout')
     if phase in ['telemetry','mode','arming'] and now-phase_at>20:raise RuntimeError(phase+' timeout; no retry')
-    if now-begin>release_s+90:raise RuntimeError('Bounded test timeout')
+    if now-begin>release_s+(1000 if native else 90):raise RuntimeError('Bounded test timeout')
     time.sleep(.02)
   result['process']='COMPLETE';result['performance']='NOT_GRADED'
  except BaseException as exc:
@@ -127,6 +148,16 @@ def main():
      raise RuntimeError('Recovery final state not verified')
     result['recovery']='PASS'
    except Exception as exc:result['recovery']='FAILED';result['recovery_error']=str(exc)
+  if native:
+   try:
+    if started and result['recovery']!='PASS':raise RuntimeError('Recovery incomplete; no mission/parameter writes attempted')
+    native.restore()
+    final=call('status');result['after_restoration']=final
+    if (final['fc']['armed'] is not False or final['fc']['SYS_HITL']!=1
+        or final['recovery_required'] or final['param_deploy_pending']):
+     raise RuntimeError('Final recovery/restore state not verified')
+   except Exception as exc:result['restore_error']=str(exc);saved_error=saved_error or exc
+   result['native_circuit']=native.result
   if link:link.close()
   save()
  if started and result['recovery']=='PASS':

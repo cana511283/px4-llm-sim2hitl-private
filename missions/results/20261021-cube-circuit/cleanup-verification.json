@@ -1,0 +1,35 @@
+{
+  "parameter_differences": {
+    "CAL_ACC3_XOFF": {
+      "before": 0.03230775147676468,
+      "after": 0.0927874892950058
+    },
+    "CAL_ACC3_YOFF": {
+      "before": -0.09060155600309372,
+      "after": 0.0140228271484375
+    },
+    "CAL_ACC3_ZOFF": {
+      "before": 0.000140470452606678,
+      "after": 0.0025190592277795076
+    },
+    "CAL_BARO2_OFF": {
+      "before": 2.44140625,
+      "after": -7.32421875
+    },
+    "COM_FLIGHT_UUID": {
+      "before": 619,
+      "after": 620
+    },
+    "LND_FLIGHT_T_LO": {
+      "before": 1909770113,
+      "after": -1950552672
+    }
+  },
+  "fc_identity_matches": true,
+  "mission_items_match": true,
+  "armed": false,
+  "SYS_HITL": 1,
+  "recovery_required": false,
+  "param_deploy_pending": null,
+  "airspeed_scale_restore": "PASS"
+}

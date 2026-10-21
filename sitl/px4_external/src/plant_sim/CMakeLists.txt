@@ -20,4 +20,4 @@ px4_add_module(
 	)
 # External modules are configured before src/lib, so PX4 libraries are linked by name here (resolved at
 # generation time) instead of px4_add_module DEPENDS.
-target_link_libraries(modules__plant_sim PRIVATE drivers_accelerometer drivers_gyroscope ${PLANT_LIB})
+target_link_libraries(modules__plant_sim PRIVATE drivers_accelerometer drivers_gyroscope dataman_client ${PLANT_LIB})

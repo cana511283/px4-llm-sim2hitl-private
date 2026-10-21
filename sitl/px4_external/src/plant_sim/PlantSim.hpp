@@ -29,6 +29,10 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/home_position.h>
+#include <uORB/topics/mission.h>
+#include <uORB/topics/mission_result.h>
+#include <lib/dataman_client/DatamanClient.hpp>
 
 #include <stdio.h>
 
@@ -83,6 +87,15 @@ private:
 	PlantCarrierConfig _carrier{};
 	bool _acro{false};
 	bool _offboard{false};  // OFFBOARD with offboard_control_mode.velocity (a module of modules/ does the guidance)
+	bool _native_mission{false};
+	bool _auto_active{false};
+	float _auto_after_s{100.f};
+	mission_item_s _mission_items[32] {};
+	int _mission_count{0};
+	mission_s _mission{};
+	bool _mission_sent{false};
+	float _truth_height{0.f};
+	float _truth_speed{0.f};
 	PlantInitialConditions _ic{};
 	PlantWindConfig _wind{};       // scenario line "wind" (plant/wind.py sitl_line)
 	double _steady_wind_ned[3] {};
@@ -117,4 +130,7 @@ private:
 	uORB::Publication<vehicle_land_detected_s> _land_detected_pub{ORB_ID(vehicle_land_detected)};
 	uORB::Publication<vehicle_local_position_s> _local_position_pub{ORB_ID(vehicle_local_position)};
 	uORB::Publication<vehicle_status_s> _status_pub{ORB_ID(vehicle_status)};
+	uORB::Publication<home_position_s> _home_pub{ORB_ID(home_position)};
+	uORB::Publication<mission_s> _mission_pub{ORB_ID(mission)};
+	uORB::Subscription _mission_result_sub{ORB_ID(mission_result)};
 };

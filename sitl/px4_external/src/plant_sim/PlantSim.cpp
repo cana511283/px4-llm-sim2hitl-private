@@ -64,8 +64,9 @@ bool PlantSim::load_scenario()
 			sscanf(line, "%*s %31s", mode);
 			_acro = !strcmp(mode, "acro");
 			_offboard = !strcmp(mode, "offboard");
+			_native_mission = !strcmp(mode, "mission");
 
-			if (!_acro && !_offboard && strcmp(mode, "stabilized")) {
+			if (!_acro && !_offboard && !_native_mission && strcmp(mode, "stabilized")) {
 				PX4_ERR("unsupported mode %s", mode);
 				fclose(f);
 				return false;
@@ -135,6 +136,28 @@ bool PlantSim::load_scenario()
                 return false;
             }
             _have_carrier = true;
+		} else if (!strcmp(word, "auto_after") && sscanf(line, "%*s %lf", &v[0]) == 1) {
+            _auto_after_s = v[0];
+        } else if (!strcmp(word, "mission") && _mission_count < 32
+                   && sscanf(line, "%*s %lf %lf %lf %lf %lf %lf %lf %lf", &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7]) == 8) {
+            mission_item_s &item = _mission_items[_mission_count++];
+            item.nav_cmd = (uint16_t)v[0];
+            item.autocontinue = true;
+            item.origin = ORIGIN_MAVLINK;
+            for (int k=0; k<7; k++) { item.params[k] = (float)v[k+1]; }
+            if (item.nav_cmd == NAV_CMD_WAYPOINT || item.nav_cmd == NAV_CMD_LOITER_TO_ALT || item.nav_cmd == NAV_CMD_LAND) {
+                item.lat = v[5]; item.lon = v[6]; item.altitude = v[7];
+                item.frame = 6; item.altitude_is_relative = true;
+                item.yaw = PX4_ISFINITE(v[4]) ? (float)(v[4]*M_PI/180.) : NAN;
+                if (item.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
+                    // Match mavlink_mission.cpp: LOITER_TO_ALT uses param2
+                    // for radius, unlike LOITER_TIME/UNLIM which use param3.
+                    item.time_inside = 0.f; item.acceptance_radius = 0.f;
+                    item.loiter_radius = (float)v[2];
+                    item.force_heading = v[1]>0; item.loiter_exit_xtrack = v[4]>0;
+                    item.yaw = NAN;
+                }
+            } else { item.frame = 2; }
 		} else if (!strcmp(word, "base") && sscanf(line, "%*s %lf %lf %lf %lf", &v[0], &v[1], &v[2], &v[3]) == 4) {
 			_base = Sticks{(float)v[0], (float)v[1], (float)v[2], (float)v[3]};
 
@@ -150,6 +173,11 @@ bool PlantSim::load_scenario()
 	}
 
 	fclose(f);
+	if (_native_mission && (!_have_carrier || _mission_count == 0 || !PX4_ISFINITE(_auto_after_s)
+			       || (double)_auto_after_s < _carrier.wait_s + _carrier.climb_s + _carrier.cruise_s)) {
+		PX4_ERR("native mission needs a carrier and a valid post-release AUTO time");
+		return false;
+	}
 	return have_ic;
 }
 
@@ -211,11 +239,13 @@ void PlantSim::publish_stub(hrt_abstime now, const Sticks &sticks, bool armed)
 
 	vehicle_status_s status{};
 	status.timestamp = now;
-	const uint8_t nav_state = _acro ? vehicle_status_s::NAVIGATION_STATE_ACRO
+	const uint8_t nav_state = _auto_active ? vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION : _acro ? vehicle_status_s::NAVIGATION_STATE_ACRO
 				  : _offboard ? vehicle_status_s::NAVIGATION_STATE_OFFBOARD : vehicle_status_s::NAVIGATION_STATE_STAB;
 	status.nav_state = nav_state;
 	status.arming_state = armed ? vehicle_status_s::ARMING_STATE_ARMED : vehicle_status_s::ARMING_STATE_DISARMED;
 	status.vehicle_type = vehicle_status_s::VEHICLE_TYPE_FIXED_WING;
+	status.system_id=1; status.component_id=1;
+	status.nav_state_user_intention=nav_state;
 	_status_pub.publish(status);
 
 	// Same flags as commander's ModeUtil (control_mode.cpp) for NAVIGATION_STATE_STAB / NAVIGATION_STATE_ACRO, and for
@@ -223,11 +253,13 @@ void PlantSim::publish_stub(hrt_abstime now, const Sticks &sticks, bool armed)
 	vehicle_control_mode_s mode{};
 	mode.timestamp = now;
 	mode.flag_armed = armed;
-	mode.flag_control_manual_enabled = !_offboard;
+	mode.flag_control_manual_enabled = !_offboard && !_auto_active;
+	mode.flag_control_auto_enabled = _auto_active;
+	mode.flag_control_position_enabled = _auto_active;
 	mode.flag_control_offboard_enabled = _offboard;
-	mode.flag_control_velocity_enabled = _offboard;
-	mode.flag_control_altitude_enabled = _offboard;
-	mode.flag_control_climb_rate_enabled = _offboard;
+	mode.flag_control_velocity_enabled = _offboard || _auto_active;
+	mode.flag_control_altitude_enabled = _offboard || _auto_active;
+	mode.flag_control_climb_rate_enabled = _offboard || _auto_active;
 	mode.flag_control_acceleration_enabled = _offboard;
 	mode.flag_control_attitude_enabled = !_acro;
 	mode.flag_control_rates_enabled = true;
@@ -255,12 +287,21 @@ void PlantSim::publish_stub(hrt_abstime now, const Sticks &sticks, bool armed)
 
 	vehicle_land_detected_s land{};
 	land.timestamp = now;
-	land.landed = false;
+	land.landed = _native_mission && _auto_active && _truth_height < .05f && _truth_speed < 1.f;
 	_land_detected_pub.publish(land);
 }
 
 void PlantSim::publish_truth(hrt_abstime now, const PlantTruth &t, const PlantSensorOutput &s)
 {
+    _truth_height = t.height_agl_m; _truth_speed = t.ground_speed_m_s;
+    if (_native_mission && _steps % 50 == 0) {
+        home_position_s home{}; home.timestamp=now;home.lat=_origin_lat_deg;home.lon=_origin_lon_deg;
+        home.alt=0.f;home.valid_alt=home.valid_hpos=home.valid_lpos=true;home.update_count=1;
+        _home_pub.publish(home);
+        if (!_mission_sent) {
+            _mission.timestamp=now; _mission_pub.publish(_mission); _mission_sent=true;
+        }
+    }
 	_px4_accel.update(now, (float)s.accel_m_s2[0], (float)s.accel_m_s2[1], (float)s.accel_m_s2[2]);
 	_px4_gyro.update(now, (float)s.gyro_rad_s[0], (float)s.gyro_rad_s[1], (float)s.gyro_rad_s[2]);
 
@@ -365,6 +406,23 @@ void PlantSim::run()
 		return;
 	}
 
+    if (_native_mission) {
+        DatamanClient client;
+        _mission.mission_dataman_id = DM_KEY_WAYPOINTS_OFFBOARD_0;
+        _mission.count=_mission_count; _mission.current_seq=0;
+        _mission.land_start_index=-1;_mission.land_index=-1;_mission.mission_id=20261021;
+        for (int k=0;k<_mission_count;k++) {
+            auto &item=_mission_items[k];
+            if (item.nav_cmd==NAV_CMD_DO_LAND_START) { _mission.land_start_index=k; }
+            if (item.nav_cmd==NAV_CMD_LAND) { _mission.land_index=k; }
+            if (!client.writeSync(DM_KEY_WAYPOINTS_OFFBOARD_0,k,reinterpret_cast<uint8_t *>(&item),sizeof(item))) {
+                PX4_ERR("mission dataman write failed"); return;
+            }
+        }
+        if (!client.writeSync(DM_KEY_MISSION_STATE,0,reinterpret_cast<uint8_t *>(&_mission),sizeof(_mission))) {
+            PX4_ERR("mission state write failed");return;
+        }
+    }
 	char path[320];
 	snprintf(path, sizeof(path), "%s/trace.csv", _output_dir);
 	_trace = fopen(path, "w");
@@ -432,7 +490,8 @@ void PlantSim::run()
 			}
 		}
 
-		const Sticks sticks = scenario_sticks(_steps * kStepUs * 1e-6f);
+		_auto_active = _native_mission && _steps * kStepUs * 1e-6f >= _auto_after_s;
+        const Sticks sticks = scenario_sticks(_steps * kStepUs * 1e-6f);
 		publish_stub(now, sticks, armed);
 		publish_truth(now, truth, sensors);
 
