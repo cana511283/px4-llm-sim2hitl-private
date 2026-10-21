@@ -13,6 +13,9 @@ class Info(C.Structure):
  _fields_=[('abi_version',C.c_uint32),('struct_size',C.c_uint32),('initial_size',C.c_uint32),('input_size',C.c_uint32),('output_size',C.c_uint32),('output_phase',C.c_uint32),('fixed_step_ns',C.c_uint64),('imu_period_ns',C.c_uint64),('gps_period_ns',C.c_uint64),('aircraft_id',C.c_char*32),('build_id',C.c_char*64),('source_sha256',C.c_char*65),('platform',C.c_char*32),('raw_count',C.c_uint32),('seed_policy',C.c_uint32),('instance_count',C.c_uint32),('reserved',C.c_uint32),('capabilities',C.c_uint64),('initial_supported',C.c_uint64)]
 class Wind(C.Structure):
  _fields_=[('abi_version',C.c_uint32),('struct_size',C.c_uint32),('steady_ned_m_s',C.c_double*3),('start_mode',C.c_uint32),('reserved0',C.c_uint32),('start_height_m',C.c_double),('start_time_s',C.c_double),('ramp_s',C.c_double),('gust_start_s',C.c_double),('gust_length_m',C.c_double*3),('gust_magnitude_m_s',C.c_double*3),('shear_speed_6m_m_s',C.c_double),('shear_from_deg',C.c_double),('turbulence_speed_6m_m_s',C.c_double),('turbulence_from_deg',C.c_double),('turbulence_seed',C.c_uint32*4)]
+class Carrier(C.Structure):
+ _fields_=[('abi_version',C.c_uint32),('struct_size',C.c_uint32)]+[(k,C.c_double) for k in ['wait_s','climb_s','cruise_s','height_m','speed_m_s']]
+CAP_CARRIER=512
 CAP_WIND=256
 def header(cls):
  x=cls();x.abi_version=ABI;x.struct_size=C.sizeof(cls);return x
@@ -39,6 +42,13 @@ class Model:
    else:setattr(w,name,value)
   function=self.lib.hil_model_configure_wind;function.argtypes=[C.POINTER(Wind)];function.restype=C.c_int32
   self.check(function(C.byref(w)))
+ def configure_carrier(self,config):
+  if not self.info.capabilities&CAP_CARRIER or not hasattr(self.lib,'hil_model_configure_carrier'):
+   raise ValueError('Release has no carrier support')
+  c=header(Carrier)
+  for name,value in config.items():setattr(c,name,value)
+  fn=self.lib.hil_model_configure_carrier;fn.argtypes=[C.POINTER(Carrier)];fn.restype=C.c_int32
+  self.check(fn(C.byref(c)))
  def reset(self,air=False): self.check(self.lib.hil_model_reset(C.byref(initial(air))))
  def run(self,controls,air=False,flags=None,wind=None):
   self.reset(air)

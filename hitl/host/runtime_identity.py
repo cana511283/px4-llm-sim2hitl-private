@@ -11,6 +11,7 @@ def source_files(project):
     fixed = [
         'runbridge',
         'hitl/main.py',
+        'hitl/carrier_test.py',
         'hitl/flight_test.json',
         'pyproject.toml',
         'uv.lock',

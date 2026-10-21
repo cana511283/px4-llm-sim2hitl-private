@@ -50,6 +50,7 @@ def main(argv=None):
             'sd-put',
             'sd-rm',
             'hitl-run',
+            'carrier-run',
             'build-firmware',
             'flash',
             'deploy-test',
@@ -137,6 +138,14 @@ def main(argv=None):
         from host.flight_test import run_test
 
         return run_test(RUNTIME, args)
+    if args.action == 'carrier-run':
+        if args.fake_fc or args.fake_state_dir or args.unarmed_only:
+            raise ValueError('carrier-run requires an explicitly authorized real FC run, not fake/unarmed-only flags')
+        if extra or not args.scenario or not args.release or not args.out:
+            raise ValueError('carrier-run needs --scenario, --release and a new --out')
+        return subprocess.call([sys.executable, '-B', str(RUNTIME / 'carrier_test.py'),
+                                '--scenario', str(args.scenario), '--release', str(args.release),
+                                '--out', str(args.out)])
     if args.action == 'hitl-run':
         if extra:
             raise ValueError('Unknown hitl-run arguments: ' + ' '.join(extra))

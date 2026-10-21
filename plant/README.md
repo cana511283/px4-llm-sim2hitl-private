@@ -188,3 +188,7 @@ SkySurfer 的數字（AVL 座標原點在翼根前緣，往機尾為正；模型
 `manifest.json` 記錄是哪個 release 錄的（`model_build_id`）、library 與腳本的 SHA-256、每個 case 的初值與控制、樣本數與是否被發散保護截斷。刻意改了模型後，先確認 `update-model` 的 Simulink 對照（`validate_library.py`）通過，再用新的 active release 重錄。
 
 感測器欄位（raw 39–57）來自 C sensors（固定預設種子），只當比較對象；感測器本身的驗收在 `validate_plant.py`，adapter 的欄位對應與時序在 `hitl/tests/validate_library.py`。
+
+## 選用的母機運動約束
+
+`include/plant_carrier.h` 與 `truth/plant_truth.c` 提供第一階段 carrier 軌跡與受約束步進；生成碼不改。只有顯式 carrier 情境才呼叫，普通 `plant_step` 路徑不變。釋放時只解除剛體運動約束，不 reset 模型／感測器／致動器。攜帶期間的自由力分項不含母機約束反力；IMU 比力使用規定的運動加速度減重力。規格、限制與驗證見 [carrier_release.md](../hitl/carrier_release.md)。

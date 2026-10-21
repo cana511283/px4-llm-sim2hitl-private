@@ -127,6 +127,14 @@ bool PlantSim::load_scenario()
 
 			_have_wind = true;
 
+		} else if (!strcmp(word, "carrier") && sscanf(line, "%*s %lf %lf %lf %lf %lf", &v[0], &v[1], &v[2], &v[3], &v[4]) == 5) {
+            _carrier = PlantCarrierConfig{v[0], v[1], v[2], v[3], v[4]};
+            PlantCarrierSample sample{};
+            if (plant_carrier_sample(&_carrier, 0., &sample) != PLANT_OK) {
+                fclose(f);
+                return false;
+            }
+            _have_carrier = true;
 		} else if (!strcmp(word, "base") && sscanf(line, "%*s %lf %lf %lf %lf", &v[0], &v[1], &v[2], &v[3]) == 4) {
 			_base = Sticks{(float)v[0], (float)v[1], (float)v[2], (float)v[3]};
 
@@ -363,7 +371,7 @@ void PlantSim::run()
 
 	if (_trace) {
 		fprintf(_trace, "t_s,roll_rad,pitch_rad,yaw_rad,p_rad_s,q_rad_s,r_rad_s,tas_m_s,height_m,"
-			"stick_roll,stick_pitch,stick_yaw,stick_throttle,ail_l,ail_r,elev,rud,thr,gs_m_s,wind_n_m_s,wind_e_m_s,wind_d_m_s\n");
+			"stick_roll,stick_pitch,stick_yaw,stick_throttle,ail_l,ail_r,elev,rud,thr,gs_m_s,wind_n_m_s,wind_e_m_s,wind_d_m_s,carrier_attached\n");
 	}
 
 	_px4_accel.set_temperature(25.f);
@@ -387,7 +395,8 @@ void PlantSim::run()
 
 	// The plant is held at its initial state (truth and IMU of t_0 republished) during the disarmed start-up
 	// and until PX4 produces the first armed actuator output; then every step advances the plant.
-	plant_step(_plant, &input, &truth);
+	if (_have_carrier) { plant_carrier_step(_plant, &input, &_carrier, &truth); }
+	else { plant_step(_plant, &input, &truth); }
 	plant_sensors_step(_sensors, &truth, &sensors);
 
 	while (!should_exit() && _steps < total_steps) {
@@ -407,7 +416,7 @@ void PlantSim::run()
 			input.command.rudder = _controls[3];
 			input.command.throttle = _controls[4];
 
-			if (plant_step(_plant, &input, &truth) != PLANT_OK || plant_sensors_step(_sensors, &truth, &sensors) != PLANT_OK) {
+			if ((_have_carrier ? plant_carrier_step(_plant, &input, &_carrier, &truth) : plant_step(_plant, &input, &truth)) != PLANT_OK || plant_sensors_step(_sensors, &truth, &sensors) != PLANT_OK) {
 				PX4_ERR("plant diverged at step %llu", (unsigned long long)_steps);
 				diverged = true;
 				break;
@@ -428,12 +437,13 @@ void PlantSim::run()
 		publish_truth(now, truth, sensors);
 
 		if (_trace && _outputs_seen) {
-			fprintf(_trace, "%.3f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.3f,%.3f,%.3f,%.3f,%.3f,%.5f,%.5f,%.5f,%.5f,%.5f,%.4f,%.4f,%.4f,%.4f\n",
+			fprintf(_trace, "%.3f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.4f,%.3f,%.3f,%.3f,%.3f,%.3f,%.5f,%.5f,%.5f,%.5f,%.5f,%.4f,%.4f,%.4f,%.4f,%u\n",
 				truth.time_s, truth.euler_rad[0], truth.euler_rad[1], truth.euler_rad[2], truth.rates_body_rad_s[0],
 				truth.rates_body_rad_s[1], truth.rates_body_rad_s[2], truth.airspeed_true_m_s, truth.height_agl_m,
 				(double)sticks.roll, (double)sticks.pitch, (double)sticks.yaw, (double)sticks.throttle,
 				_controls[0], _controls[1], _controls[2], _controls[3], _controls[4], truth.ground_speed_m_s,
-				truth.wind_ned_m_s[0], truth.wind_ned_m_s[1], truth.wind_ned_m_s[2]);
+				truth.wind_ned_m_s[0], truth.wind_ned_m_s[1], truth.wind_ned_m_s[2],
+                (unsigned)(_have_carrier && truth.time_s < _carrier.wait_s + _carrier.climb_s + _carrier.cruise_s));
 		}
 
 		if (_modules_up) {

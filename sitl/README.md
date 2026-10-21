@@ -133,3 +133,7 @@ PX4 模組（Stabilized）：sensors、pwm_out_sim、control_allocator、fw_rate
 - **不是逐位元可重現**：PX4 模組分在幾個 work queue 執行緒，同一步內的先後不固定。同設定重跑 4 次，roll 最大差 0.001 rad；比對 SITL 結果要用容差，不要求 trace 相同。
 - **右副翼反向是推得的**：HITL 的 wire log 顯示 controls[0] 與 controls[1] 在飛行中完全相同，而 plant 兩個副翼通道都是「正值 → 左滾」，所以 FC 必定反向了一路；`deploy/00_native/hitl_overrides.params` 用 `HIL_ACT_REV=2`（右副翼）表示；2026-10-16 由 FC 的 ULog 參數讀回確認。
 - **空速偏高**：PX4 的 `FW_THR_TRIM=0.6` 和這個模型（15 m/s 平飛約 0.115 油門）不吻合，見 [README](../README.md)「已知問題」。
+
+## 實驗：母機攜帶後釋放
+
+`carrier_release_stabilized.json` 由地面零狀態起始，`carrier` 指定等待／爬升／水平攜帶時長、釋放高度與速度。共用 plant 的 `plant_carrier_step`，僅在顯式選用的情境啟用；不改原生情境。`trace.csv` 多一欄 `carrier_attached`。SITL 的 arming 仍是 stub，不能代表實體 FC 會正常解鎖。完整規格與第一版限制見 [carrier_release.md](../hitl/carrier_release.md)。

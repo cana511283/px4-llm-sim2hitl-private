@@ -24,13 +24,13 @@
   "outputs": {
     "firmware": {
       "file": "cubepilot_cubeorangeplus_hil.px4",
-      "sha256": "f8775da4d2a43d4965bae76278a330fcb4018fb4f6c25534463f36c04bae1a60",
-      "size": 1819667
+      "sha256": "3eb430d65069f648ec58f91852db50e0f99def2ea9cff7cb41d6eff7ef0e4731",
+      "size": 1817727
     },
     "image_bin": {
       "file": "not kept (inside the .px4 image field)",
-      "sha256": "e7d45e8d445d110a14c494f2e48e4f7b0d2fa226c733cc49236b112b930eb020",
-      "size": 1935720
+      "sha256": "7c582aa511e736864a1d40a1d427b28447d7616511e70e772604a3324dbe7d3c",
+      "size": 1935976
     },
     "parameters": {
       "file": "parameters.json.xz",
@@ -45,9 +45,9 @@
     "git_identity": "v1.17.0-1-gc45268d",
     "git_hash": "c45268d05609345371f7ed9a005dcebeeb4aacd3",
     "nuttx_git_hash": "8d3ed2a2177267cb0ad5a1cadbee9ccdb6aab70d",
-    "image_size": 1935720,
+    "image_size": 1935976,
     "image_maxsize": 1966080,
-    "flash_used_percent": 98.46
+    "flash_used_percent": 98.47
   },
   "build": {
     "command": "make cubepilot_cubeorangeplus_hil BUILD_DIR_SUFFIX=_01_sdfix_cubeorangeplus",
@@ -69,13 +69,13 @@
     ],
     "modules": {},
     "toolchain": "arm-none-eabi-gcc (15:13.2.rel1-2) 13.2.1 20231009",
-    "built_at_utc": "2026-10-20T08:30:01Z",
-    "seconds": 103.1,
-    "log": "~/.cache/px4-llm-sim2hitl/firmware/01_sdfix_cubeorangeplus/build_20261020_162817.log"
+    "built_at_utc": "2026-10-21T07:20:50Z",
+    "seconds": 74.8,
+    "log": "~/Documents/Codex/2026-10-21/https-github-com-rhyne1012-px4-llm/work/sim2hitl-cache/firmware/01_sdfix_cubeorangeplus/build_20261021_151935.log"
   },
   "flashed": {
     "status": "PASS",
-    "at_utc": "2026-10-20T09:10:32Z",
+    "at_utc": "2026-10-21T07:56:16Z",
     "port": "/dev/ttyACM0",
     "tool": "<PX4 tree>/Tools/px_uploader.py --port /dev/ttyACM0 cubepilot_cubeorangeplus_hil.px4",
     "attempts": 1,
@@ -85,6 +85,6 @@
       "os_hash_prefix": "8d3ed2a2177267cb",
       "board_version": 4184
     },
-    "evidence": "~/.cache/px4-llm-sim2hitl/deploy_runs/run_20261020_090940Z_1b7fb4ea/flash"
+    "evidence": "~/Documents/Codex/2026-10-21/https-github-com-rhyne1012-px4-llm/work/sim2hitl-cache/deploy_runs/run_20261021_075525Z_9d8574d8/flash"
   }
 }

@@ -118,3 +118,9 @@ for f in hitl/tests/test_*.py deploy/test_*.py; do "$PY" -B "$f"; done
 - 600 s 負載（不開視窗）：`"$PY" -B hitl/tests/run_load.py <新的空資料夾> --duration 600`。PASS 條件寫在 `run_load.py`：每步計算 p99 < 2 ms、最慢 < 4 ms、0 次晚到（≥ 4 ms）、每 10 s 的即時倍率在 0.99–1.01、沒有序列埠錯誤或掉 log。`--peer-mode process` 只用來診斷對照。
 - `tests/validate_library.py` 由 `update-model` 呼叫，用 Simulink 參考結果與 ABI 驗證新建的 library。
 - `tests/run_live_unarmed.py` 會連實體 PX4（不解鎖），屬實體測試；它的序列埠寫死成 macOS 的 `/dev/cu.usbmodem01`，在 Linux 不能直接用。
+
+## 母機攜帶／釋放（第一階段，2026-10-21）
+
+本機新增的實驗路線，規格與限制見 [carrier_release.md](carrier_release.md)。它仍從地面靜止、未解鎖開始；不放寬實體空中初始化的限制。母機是無風、朝北、水平姿態的運動約束，不是另一架有氣動模型的飛機。模型的 carrier 計時只在實體 FC 明確回報 armed 後開始；未知／未解鎖不啟動攜帶，開始後失去 armed 確認就 fault。沒有改 PX4 的解鎖檢查。
+
+首次實體測試須先完成離線及 SITL，並依 AGENTS 取得首次新算法上 FC 的確認。此路線不沿用「起飛後盤旋」的驗收：`carrier-run` 有界執行、標準停止及恢復、參數前後核對、新飛控記錄歸屬核對／下載兩次／嚴格解析；飛行品質只報告，未約定門檻不能判穩定 PASS。

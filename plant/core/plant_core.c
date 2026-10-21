@@ -169,6 +169,17 @@ int32_t plant_core_get_state(const PlantCore *core, double x[PLANT_CORE_STATE_CO
   return PLANT_CORE_OK;
 }
 
+int32_t plant_core_set_rigid_state(PlantCore *core, const double rigid[13]) {
+  if (core == NULL || rigid == NULL) return PLANT_CORE_ERR_INPUT;
+  if (!core->ready || core->diverged || core->step_index == 0) return PLANT_CORE_ERR_STATE;
+  for (int k = 0; k < 13; k++) if (!isfinite(rigid[k])) return PLANT_CORE_ERR_INPUT;
+  double norm = 0.0;
+  for (int k = 6; k < 10; k++) norm += rigid[k] * rigid[k];
+  if (fabs(norm - 1.0) > 1e-9) return PLANT_CORE_ERR_INPUT;
+  memcpy(&core->states, rigid, 13 * sizeof(double));
+  return PLANT_CORE_OK;
+}
+
 int32_t plant_core_eval(PlantCore *core, const double x[PLANT_CORE_STATE_COUNT],
                       const double controls[PLANT_CORE_CONTROL_COUNT], double xdot[PLANT_CORE_STATE_COUNT],
                       double snapshot[PLANT_CORE_SNAPSHOT_COUNT]) {

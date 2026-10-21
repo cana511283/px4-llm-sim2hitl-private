@@ -22,6 +22,7 @@ extern "C" {
 #define HIL_CAP_TRUTH 8u
 #define HIL_CAP_RESET 16u
 #define HIL_CAP_RUNTIME_INITIAL 32u
+#define HIL_CAP_CARRIER 512u /* optional armed-gated prescribed carrier */
 #define HIL_CAP_WIND 256u /* hil_model_configure_wind */
 /* initialize/reset/step/terminate require serialized calls. Reset after worker stop. */
 /* Natural C alignment. No packing. All arrays have fixed dimensions. */
@@ -77,6 +78,16 @@ typedef struct {
   uint32_t turbulence_seed[4];
 } HilWindConfig;
 HIL_EXPORT int32_t hil_model_configure_wind(const HilWindConfig *wind);
+/* Optional carrier extension. Configure once after reset, before stepping.
+ * Only ground/zero-velocity/zero-Euler initial conditions and no wind. Arming
+ * must be confirmed in HilModelInput.fc_armed; unknown is never armed.
+ * output.reserved, with HIL_CAP_CARRIER: 0 disabled, 1 waiting for arm,
+ * 2 attached, 3 released. No output/header/clock layout change. */
+typedef struct {
+  uint32_t abi_version, struct_size;
+  double wait_s, climb_s, cruise_s, height_m, speed_m_s;
+} HilCarrierConfig;
+HIL_EXPORT int32_t hil_model_configure_carrier(const HilCarrierConfig *carrier);
 HIL_EXPORT int32_t hil_model_terminate(void);
 HIL_EXPORT int32_t hil_model_get_last_error(char *buffer,uint32_t capacity);
 #ifdef __cplusplus

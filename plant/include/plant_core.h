@@ -121,6 +121,11 @@ int32_t plant_core_copy(PlantCore *dst, const PlantCore *src);
 /* Read the continuous states. */
 int32_t plant_core_get_state(const PlantCore *core, double x[PLANT_CORE_STATE_COUNT]);
 
+/* Prescribed carrier boundary, after at least one normal step. Only rigid-body states
+ * [position, velocity_body, quaternion, rates] change; time, actuator states, limiter
+ * history and wind states are preserved. Used after a carried step for t_(k+1). */
+int32_t plant_core_set_rigid_state(PlantCore *core, const double rigid[13]);
+
 /* State derivative f(x, u) for trim and linearisation. Writes x into core, applies controls and runs one
  * normal step: the snapshot (may be NULL) is the output at x, and xdot is the first ode4 stage f(t_k, x),
  * the same code path as the simulation. The core is advanced one step afterwards, so call this on a copy

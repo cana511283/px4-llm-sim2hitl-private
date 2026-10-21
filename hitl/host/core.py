@@ -772,6 +772,7 @@ class Core(SdFiles):
             and fresh
             and self.fc['SYS_HITL'] == 1
             and self.scene.get('height_agl_m', 0) == 0
+            and not self.scene.get('carrier')
             and not self.unarmed_only
             and self.fc['identity'] == [1, 1]
             and self.fc['armed'] is False,
@@ -824,6 +825,7 @@ class Core(SdFiles):
                 'velocity_ned_m_s': [safe(x) for x in s.output.velocity_ned_m_s],
                 'ground_speed_m_s': safe(s.output.ground_speed_m_s),
                 'course_deg': safe(s.output.course_deg),
+                'carrier_phase': int(s.output.reserved) if self.scene.get('carrier') else 0,
             }
             if s.produced
             else None
@@ -1853,11 +1855,16 @@ class Core(SdFiles):
             wind, reminders = load_wind(new)
             self.scene, self.initial = new, initial
             self.model.check(self.model.lib.hil_model_reset(C.byref(initial)))
-            if wind is not None and (self.model.info.capabilities & CAP_WIND):
+            if 'carrier' in new:
+                if any(wind['steady_ned_m_s']) or any(wind['gust_magnitude_m_s']) or wind['shear_speed_6m_m_s'] or wind['turbulence_speed_6m_m_s']:
+                    raise ValueError('Carrier phase one requires no wind')
+            elif wind is not None and (self.model.info.capabilities & CAP_WIND):
                 self.model.configure_wind(wind)
             elif wind is not None and (any(wind['steady_ned_m_s']) or any(wind['gust_magnitude_m_s'])
                                        or wind['shear_speed_6m_m_s'] or wind['turbulence_speed_6m_m_s']):
                 raise ValueError('This model release has no wind support')
+            if 'carrier' in new:
+                self.model.configure_carrier(new['carrier'])
             self.wind_reminders = reminders
             self.controls = [0.0] * 16
             self.control_valid = self.pending_control = False

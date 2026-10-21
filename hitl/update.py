@@ -22,7 +22,7 @@ sys.path.insert(0,str(PLANT/'core'))
 import toolchain
 FLAGS=['-std=c11','-O2','-fno-fast-math','-ffp-contract=off','-fvisibility=hidden']+toolchain.shared_flags()
 # Plant gate reports sealed into every release next to the library validation (validation.json).
-GATES=['reuse_policy.json','core_validation.json','plant_validation.json','validation.json']
+GATES=['reuse_policy.json','core_validation.json','plant_validation.json','carrier_validation.json','carrier_abi_validation.json','validation.json']
 EVIDENCE=['build.json','core_build.json','core_compile.json']
 CODEGEN='codegen/SkySurfer_Core_ert_rtw'
 RESULTS=['reuse_policy.json','core_build.json','wind_wind.csv']+[f'{k}_{c}.csv' for k in ['source','core','controls'] for c in ['ground','air','wind']]
@@ -74,7 +74,7 @@ def fingerprint():
  records=model_sources();records.update(tree(GENERATED,'model/generated/'))
  # Only the library validator belongs to the build; other tests (host, fake FC) do not change the model.
  for folder in ['interface','native','aircraft/skysurfer']:records.update(tree(RUNTIME/folder,'hitl/'+folder+'/'))
- for f in ['poc/source_columns.json','tests/validate_library.py','update.py','host/abi.py','host/scenario.py','host/packets.py']:records['hitl/'+f]=digest(RUNTIME/f)
+ for f in ['poc/source_columns.json','tests/validate_library.py','tests/validate_carrier_abi.py','update.py','host/abi.py','host/scenario.py','host/packets.py']:records['hitl/'+f]=digest(RUNTIME/f)
  # Plant core wrapper, C Truth, C sensors and their validators (plant/reference holds recorded data, not build inputs).
  for folder in ['include','core','truth','sensors']:records.update(tree(PLANT/folder,'plant/'+folder+'/'))
  records['compiler']=toolchain.compiler_version()
@@ -169,6 +169,8 @@ def validate(cache):
  # Plant gates first (core against the reference data, Truth/sensors), then the HIL library itself.
  subprocess.run([sys.executable,'-B',str(PLANT/'core/compile_core.py'),'--cache',str(cache)],check=True)
  for script in ['validate_core.py','validate_plant.py']:subprocess.run([sys.executable,'-B',str(PLANT/'core'/script),'--cache',str(cache)],check=True)
+ subprocess.run([sys.executable,'-B',str(PLANT/'core/validate_carrier.py'),'--plant-lib',str(cache/'native'/toolchain.lib('skysurfer_plant')),'--out',str(cache/'results/carrier_validation.json')],check=True)
+ subprocess.run([sys.executable,'-B',str(RUNTIME/'tests/validate_carrier_abi.py'),'--library',str(cache/'native'/toolchain.lib('skysurfer')),'--out',str(cache/'results/carrier_abi_validation.json')],check=True)
  subprocess.run([sys.executable,'-B',str(RUNTIME/'tests/validate_library.py'),'--cache',str(cache)],check=True)
 def publish(cache,build_id,fp,reference,generated):
  # Every gate must have passed, not only the library validation; their reports are sealed in the release.

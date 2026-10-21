@@ -2,6 +2,7 @@
 #include "skysurfer_plant.h"
 
 #include "plant_geo.h"
+#include "plant_carrier.h"
 
 #include <math.h>
 #include <stddef.h>
@@ -269,6 +270,71 @@ int32_t plant_step(Plant *plant, const PlantInput *input, PlantTruth *truth) {
   fill_truth(plant, y, time_s, truth);
   plant->last_height_m = truth->height_agl_m;
   return PLANT_OK;
+}
+
+int32_t plant_carrier_sample(const PlantCarrierConfig *c, double t, PlantCarrierSample *s) {
+  if (!c || !s || !isfinite(t) || t < 0.0) return PLANT_ERR_INPUT;
+  const double values[] = {c->wait_s, c->climb_s, c->cruise_s, c->height_m, c->speed_m_s};
+  for (int k = 0; k < 5; k++) if (!isfinite(values[k])) return PLANT_ERR_INPUT;
+  if (c->wait_s < 0 || c->climb_s < 1 || c->cruise_s < 0 ||
+      c->height_m <= 0 || c->height_m > 10000 || c->speed_m_s <= 0 || c->speed_m_s > 200)
+    return PLANT_ERR_INPUT;
+  memset(s, 0, sizeof(*s));
+  s->rigid[6] = 1.0;
+  const double end = c->wait_s + c->climb_s;
+  s->carried = t < end + c->cruise_s;
+  if (t <= c->wait_s) return PLANT_OK;
+  if (t < end) {
+    const double u = (t - c->wait_s) / c->climb_s;
+    const double u2 = u*u, u3 = u2*u, u4 = u3*u, u5 = u4*u;
+    const double smooth = 10*u3 - 15*u4 + 6*u5;
+    const double ds = 30*u2 - 60*u3 + 30*u4;
+    const double dds = 60*u - 180*u2 + 120*u3;
+    s->rigid[0] = c->speed_m_s*c->climb_s*(2.5*u4 - 3*u5 + u5*u);
+    s->rigid[2] = -c->height_m*smooth;
+    s->rigid[3] = c->speed_m_s*smooth;
+    s->rigid[5] = -c->height_m*ds/c->climb_s;
+    s->accel_ned_m_s2[0] = c->speed_m_s*ds/c->climb_s;
+    s->accel_ned_m_s2[2] = -c->height_m*dds/(c->climb_s*c->climb_s);
+  } else {
+    s->rigid[0] = c->speed_m_s*(0.5*c->climb_s + t-end);
+    s->rigid[2] = -c->height_m;
+    s->rigid[3] = c->speed_m_s;
+  }
+  return PLANT_OK;
+}
+
+int32_t plant_carrier_step(Plant *plant, const PlantInput *input,
+                           const PlantCarrierConfig *config, PlantTruth *truth) {
+  if (!plant || !plant->ready) return PLANT_ERR_INPUT;
+  return plant_carrier_step_at(plant, input, config, plant_core_time_s(core_of(plant)), 1, truth);
+}
+
+int32_t plant_carrier_step_at(Plant *plant, const PlantInput *input,
+    const PlantCarrierConfig *config, double time, uint32_t advance, PlantTruth *truth) {
+  if (!plant || !input || !truth || !plant->ready || advance > 1) return PLANT_ERR_INPUT;
+  /* Phase one explicitly excludes wind, including delayed wind, not merely its
+   * instantaneous value. Never silently replace configured weather. */
+  if (low_altitude_mode(&plant->wind) || input->wind_ned_m_s[0] != 0 ||
+      input->wind_ned_m_s[1] != 0 || input->wind_ned_m_s[2] != 0) return PLANT_ERR_INPUT;
+  if (plant->initial.height_m != 0 || plant->initial.velocity_body_m_s[0] != 0 ||
+      plant->initial.velocity_body_m_s[1] != 0 || plant->initial.velocity_body_m_s[2] != 0 ||
+      plant->initial.euler_deg[0] != 0 || plant->initial.euler_deg[1] != 0 || plant->initial.euler_deg[2] != 0)
+    return PLANT_ERR_INPUT;
+  PlantCarrierSample now, next;
+  if (plant_carrier_sample(config, time, &now) ||
+      plant_carrier_sample(config, time + (advance ? PLANT_CORE_DT_S : 0.0), &next)) return PLANT_ERR_INPUT;
+  const int32_t code = plant_step(plant, input, truth);
+  if (code != PLANT_OK || !now.carried) return code;
+  /* The prescribed next state was installed after the previous step. Thus the
+   * ordinary snapshot already has consistent position, velocity and air data. */
+  for (int k = 0; k < 3; k++) {
+    truth->accel_ned_m_s2[k] = now.accel_ned_m_s2[k];
+    truth->specific_force_body_m_s2[k] = now.accel_ned_m_s2[k] - (k == 2 ? PLANT_GRAVITY_M_S2 : 0.0);
+    truth->angular_accel_body_rad_s2[k] = 0.0;
+  }
+  truth->on_ground = time <= config->wait_s;
+  return plant_core_set_rigid_state(core_of(plant), next.rigid) == PLANT_CORE_OK ? PLANT_OK : PLANT_ERR_STATE;
 }
 
 int32_t plant_copy(Plant *dst, const Plant *src) {

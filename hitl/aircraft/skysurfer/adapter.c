@@ -3,6 +3,7 @@
 #include "hil_model_api.h"
 #include "skysurfer_plant.h"
 #include "plant_sensors.h"
+#include "plant_carrier.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +23,11 @@
 static const double kPi=3.14159265358979323846, kG0=9.80665;
 static Plant *plant=NULL;
 static PlantSensors *sensors=NULL;
-static int active=0;
+static int active=0, carrier_enabled=0, carrier_started=0, wind_configured=0;
+static int carrier_ground_initial=0;
+static uint64_t carrier_arm_step=0;
+static PlantCarrierConfig carrier;
+
 static uint64_t next_step=0;
 static double held_controls[16], geoid_separation, steady_wind[3];
 static char last_error[256];
@@ -44,7 +49,7 @@ int32_t hil_model_get_info(HilModelInfo *o) {
   snprintf(o->aircraft_id,sizeof(o->aircraft_id),"skysurfer");
   snprintf(o->build_id,sizeof(o->build_id),"%s",HIL_BUILD_ID);
   snprintf(o->source_sha256,sizeof(o->source_sha256),"%s",HIL_SOURCE_HASH);
-  snprintf(o->platform,sizeof(o->platform),"%s",HIL_PLATFORM);o->raw_count=HIL_RAW_COUNT;o->instance_count=1;o->capabilities=0x3f|HIL_CAP_WIND;o->initial_supported=0x7f;
+  snprintf(o->platform,sizeof(o->platform),"%s",HIL_PLATFORM);o->raw_count=HIL_RAW_COUNT;o->instance_count=1;o->capabilities=0x3f|HIL_CAP_WIND|HIL_CAP_CARRIER;o->initial_supported=0x7f;
   return 0;
 }
 static int32_t initialize(const HilInitialConditions *i) {
@@ -59,6 +64,9 @@ static int32_t initialize(const HilInitialConditions *i) {
   PlantInitialConditions ic;memset(&ic,0,sizeof(ic));
   ic.height_agl_m=i->height_m;ic.latitude_deg=i->latitude_deg;ic.longitude_deg=i->longitude_deg;ic.seed=HIL_DEFAULT_SEED;
   for(int k=0;k<3;k++) {ic.velocity_body_m_s[k]=i->body_velocity_m_s[k];ic.euler_rad[k]=i->euler_deg[k]*(kPi/180.0);}
+  carrier_enabled=carrier_started=wind_configured=0;
+  carrier_ground_initial=i->height_m==0;
+  for(int k=0;k<3;k++) if(i->body_velocity_m_s[k]!=0 || i->euler_deg[k]!=0) carrier_ground_initial=0;
   active=0;
   if(plant_init(plant,&ic)!=PLANT_OK) return fail(4,"Plant rejected the initial conditions");
   PlantSensorConfig config;plant_sensors_default_config(&config);
@@ -71,7 +79,7 @@ int32_t hil_model_initialize(const HilInitialConditions *i) {if(active) return f
 int32_t hil_model_reset(const HilInitialConditions *i) {return initialize(i);}
 int32_t hil_model_configure_wind(const HilWindConfig *w) {
   if(!active) return fail(2,"Model is not initialized");
-  if(next_step!=0) return fail(2,"Wind is set before the first step");
+  if(next_step!=0 || carrier_enabled) return fail(2,"Wind must be set before stepping and cannot be mixed with carrier mode");
   if(!w||!valid_header(w->abi_version,w->struct_size,sizeof(*w))) return fail(4,"wind ABI mismatch");
   for(int k=0;k<3;k++) if(!isfinite(w->steady_ned_m_s[k])||fabs(w->steady_ned_m_s[k])>100) return fail(4,"Invalid steady wind");
   PlantWindConfig c;plant_default_wind_config(&c);
@@ -82,8 +90,26 @@ int32_t hil_model_configure_wind(const HilWindConfig *w) {
   c.turbulence_speed_6m_m_s=w->turbulence_speed_6m_m_s;c.turbulence_from_deg=w->turbulence_from_deg;
   for(int k=0;k<4;k++) c.turbulence_seed[k]=w->turbulence_seed[k];
   if(plant_configure_wind(plant,&c)!=PLANT_OK) return fail(4,"Plant rejected the wind");
+  wind_configured=1;
   memcpy(steady_wind,w->steady_ned_m_s,sizeof(steady_wind));
   return 0;
+}
+int32_t hil_model_configure_carrier(const HilCarrierConfig *c) {
+  if(!active || next_step!=0 || wind_configured || !carrier_ground_initial || carrier_enabled)
+    return fail(2,"Carrier requires fresh ground/zero-velocity/zero-Euler reset without wind");
+  if(!c || !valid_header(c->abi_version,c->struct_size,sizeof(*c))) return fail(4,"Carrier ABI mismatch");
+  PlantCarrierConfig config={c->wait_s,c->climb_s,c->cruise_s,c->height_m,c->speed_m_s};
+  PlantCarrierSample sample;
+  if(plant_carrier_sample(&config,0,&sample)!=PLANT_OK) return fail(4,"Invalid carrier configuration");
+  /* An exactly prescribed cruise otherwise produces identical float differential
+   * pressure for seconds. PX4 correctly rejects that as a stuck sensor. Model
+   * a small measurement noise here, without changing ordinary-flight defaults,
+   * plant truth, or the FC's validity checks. Only configurable before step 0. */
+  PlantSensorConfig sensor_config;plant_sensors_default_config(&sensor_config);
+  sensor_config.diff_pressure_noise_pa=0.1;
+  if(plant_sensors_init(sensors,&sensor_config,HIL_DEFAULT_SEED)!=PLANT_OK)
+    return fail(4,"Sensors rejected the carrier configuration");
+  carrier=config;carrier_enabled=1;carrier_started=0;carrier_arm_step=0;return 0;
 }
 int32_t hil_model_terminate(void) {active=0;free(plant);free(sensors);plant=NULL;sensors=NULL;return 0;}
 /* raw_source[58]: positions and units of the recorded reference (plant/reference); Truth fields from the
@@ -122,11 +148,20 @@ int32_t hil_model_step(const HilModelInput *i,HilModelOutput *o) {
   in.command.rudder=held_controls[3];in.command.throttle=held_controls[4];
   memcpy(in.wind_ned_m_s,steady_wind,sizeof(in.wind_ned_m_s));
   PlantTruth t;PlantSensorOutput s;
-  int32_t code=plant_step(plant,&in,&t);
+  uint32_t carrier_phase=0;
+  int32_t code;
+  if(carrier_enabled) {
+    if(carrier_started && i->fc_armed!=1) {active=0;return fail(2,"Carrier run lost confirmed armed state; stop and recover");}
+    if(!carrier_started && i->fc_armed==1) {carrier_started=1;carrier_arm_step=next_step;}
+    const double elapsed=carrier_started ? (double)(next_step-carrier_arm_step)*0.004 : 0.0;
+    carrier_phase=!carrier_started ? 1u : elapsed<carrier.wait_s+carrier.climb_s+carrier.cruise_s ? 2u : 3u;
+    code=plant_carrier_step_at(plant,&in,&carrier,elapsed,(uint32_t)carrier_started,&t);
+  } else code=plant_step(plant,&in,&t);
   if(code==PLANT_ERR_DIVERGED) {active=0;return fail(3,"Plant returned nonfinite data; reset required");}
   if(code!=PLANT_OK) {active=0;return fail(2,"Plant step failed; reset required");}
   if(plant_sensors_step(sensors,&t,&s)!=PLANT_OK) {active=0;return fail(2,"Sensor step failed; reset required");}
   memset(o,0,sizeof(*o));o->abi_version=HIL_ABI_VERSION;o->struct_size=sizeof(*o);o->model_time_ns=next_step*4000000;
+  o->reserved=carrier_phase;
   fill_raw(&t,&s,o->raw_source);
   for(int k=0;k<HIL_RAW_COUNT;k++) if(!isfinite(o->raw_source[k])) {active=0;return fail(3,"Plant returned nonfinite data; reset required");}
   /* Recipe envelope: fault on divergence before float wire conversion (same limits as before). */

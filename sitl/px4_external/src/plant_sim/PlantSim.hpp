@@ -34,6 +34,7 @@
 
 #include "skysurfer_plant.h"
 #include "plant_sensors.h"
+#include "plant_carrier.h"
 
 class PlantSim : public ModuleBase<PlantSim>
 {
@@ -78,6 +79,8 @@ private:
 	char _output_dir[256] {};
 	char _scenario_path[256] {};
 	// Scenario (written by sitl/run_sitl.py from a scenario JSON): mode, initial state, base sticks, steps.
+	bool _have_carrier{false};
+	PlantCarrierConfig _carrier{};
 	bool _acro{false};
 	bool _offboard{false};  // OFFBOARD with offboard_control_mode.velocity (a module of modules/ does the guidance)
 	PlantInitialConditions _ic{};

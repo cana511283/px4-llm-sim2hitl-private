@@ -156,6 +156,20 @@ def scenario_text(scenario, params):
                  initial['height_agl_m'], airspeed * math.cos(alpha), airspeed * math.sin(alpha), alpha_deg,
                  initial.get('heading_deg', 0.0), initial['latitude_deg'], initial['longitude_deg']),
              'base {roll:.9g} {pitch:.9g} {yaw:.9g} {throttle:.9g}'.format(**base)]
+    if 'carrier' in scenario:
+        carrier = scenario['carrier']
+        keys = ('wait_s', 'climb_s', 'cruise_s', 'height_m', 'speed_m_s')
+        if set(carrier) != set(keys):
+            raise ValueError('carrier requires exactly ' + ', '.join(keys))
+        values = [carrier[k] for k in keys]
+        if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+            raise ValueError('carrier values must be finite numbers')
+        if (values[0] < 0 or values[1] < 1 or values[2] < 0 or not 0 < values[3] <= 10000
+                or not 0 < values[4] <= 200):
+            raise ValueError('carrier values outside supported limits')
+        if scenario.get('wind') is not None or scenario.get('trim') or initial['height_agl_m'] != 0 or airspeed != 0 or initial.get('heading_deg', 0) != 0:
+            raise ValueError('carrier phase one requires north-facing ground start, no trim and no wind')
+        lines.append('carrier ' + ' '.join(format(v, '.12g') for v in values))
     settle = scenario.get('settle_s', 0.0)  # step times in the JSON are counted after the settling time
     for step in scenario.get('steps', []):
         lines.append('step {:.9g} {:.9g} {:.9g} {:.9g} {:.9g} {:.9g}'.format(
