@@ -1,0 +1,64 @@
+{
+  "process": "FAILED",
+  "flight_scope_completed": [
+    "carrier_release",
+    "40s_stabilization",
+    "native_five_leg_circuit",
+    "orbit_descent",
+    "landing_approach"
+  ],
+  "landing_completed": false,
+  "reason": "PX4 event: Landing aborted: terrain measurement not found",
+  "terrain_measurement_valid_samples": 0,
+  "position_samples": 4518,
+  "landing_abort_time_since_armed_s": 450.95775,
+  "terrain_event_time_since_armed_s": 450.91169299999996,
+  "height_at_mode_change_m": 35.66782337991281,
+  "terrain_parameters": {
+    "FW_LND_USETER": 1,
+    "FW_LND_ABORT": 3
+  },
+  "mission_sequences_logged": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    9
+  ],
+  "timing_misses": 0,
+  "standard_recovery": "PASS",
+  "mission_restore": "PASS",
+  "temporary_parameter_restore": "PASS",
+  "auto_scale_update": "ASPD_SCALE_1 changed after disarm; additional restoration recorded separately",
+  "log_id": 356,
+  "before_newest_log_id": 355,
+  "new_log_attribution": true,
+  "download_hashes_match": true,
+  "sha256": "880ee3713b7ea5cd830da1778213e684df2f50dcb537f11e07e37bc987d26af5",
+  "strict_log_parse": {
+    "ok": true,
+    "end": 53734414,
+    "file_size": 53734414,
+    "formats": 106,
+    "counts": {
+      "B": 1,
+      "I": 15,
+      "F": 106,
+      "P": 1123,
+      "Q": 114,
+      "M": 295,
+      "A": 83,
+      "D": 1114426,
+      "L": 14,
+      "S": 905
+    },
+    "errors": []
+  },
+  "airspeed_scale_restoration": "PASS",
+  "final_fc_armed": false,
+  "final_SYS_HITL": 1
+}
