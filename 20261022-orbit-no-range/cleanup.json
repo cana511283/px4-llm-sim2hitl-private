@@ -1,0 +1,21 @@
+{
+  "armed": false,
+  "SYS_HITL": 1,
+  "model": "initialized",
+  "recovery_required": false,
+  "param_deploy_pending": null,
+  "mission_restore": "PASS",
+  "parameter_restore": "PASS",
+  "unexpected_parameter_changes": [],
+  "FC_owned_changes": [
+    "CAL_BARO2_OFF",
+    "COM_FLIGHT_UUID",
+    "LND_FLIGHT_T_LO"
+  ],
+  "misses": 0,
+  "source_identity_unchanged": true,
+  "fc_log_id": 358,
+  "previous_latest_log_id": 357,
+  "double_download_identical": true,
+  "strict_parse": true
+}

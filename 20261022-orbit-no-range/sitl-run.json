@@ -1,0 +1,35 @@
+{
+  "scenario": "carrier_native_orbit_no_range",
+  "complete": true,
+  "start": [],
+  "trim": null,
+  "wind_reminders": [],
+  "plant_library": {
+    "loaded": "/home/iec-dynabook/Documents/Codex/2026-10-22/https-github-com-cana511283-px4-llm-3/outputs/carrier-no-range/hitl/releases/skysurfer/linux-x64/skysurfer-5e8343f64ea32411a30665ec/libskysurfer_plant.so",
+    "active_release": "/home/iec-dynabook/Documents/Codex/2026-10-22/https-github-com-cana511283-px4-llm-3/outputs/carrier-no-range/hitl/releases/skysurfer/linux-x64/skysurfer-5e8343f64ea32411a30665ec/libskysurfer_plant.so",
+    "same": true
+  },
+  "instances": [
+    {
+      "steps": 120000,
+      "requested_steps": 120000,
+      "end": "complete",
+      "sim_s": 480.0,
+      "wall_s": 4.24682,
+      "realtime_factor": 113.026,
+      "warmup_steps": 108,
+      "wall_start_unix_us": 1792647108994971,
+      "wall_end_unix_us": 1792647113241791,
+      "instance": 0,
+      "exit": 0,
+      "retries": 0,
+      "failed_attempts": [],
+      "problems": []
+    }
+  ],
+  "parameters": 581,
+  "wall_s_total": 4.418803439999465,
+  "throughput_realtime_factor": 113.0257463231312,
+  "stepping_window_s": 4.24682,
+  "realtime_factor_including_startup": 108.6266919354209
+}

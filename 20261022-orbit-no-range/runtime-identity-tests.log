@@ -1,0 +1,9 @@
+test_capture_stays_fixed_and_drift_is_explicit (__main__.IdentityTests.test_capture_stays_fixed_and_drift_is_explicit) ... ok
+test_deterministic_sorted_content_identity (__main__.IdentityTests.test_deterministic_sorted_content_identity) ... ok
+test_host_and_commands_change_id (__main__.IdentityTests.test_host_and_commands_change_id) ... ok
+test_logs_cache_tests_secrets_excluded (__main__.IdentityTests.test_logs_cache_tests_secrets_excluded) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.006s
+
+OK

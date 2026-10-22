@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "origin": [
+    22.910275834988674,
+    120.31096929726908,
+    0
+  ],
+  "auto_after_release_s": 0,
+  "parameters_proposed": {
+    "FW_THR_TRIM": 0.121,
+    "FW_AIRSPD_TRIM": 15.433333333333334,
+    "FW_LND_USETER": 0
+  },
+  "items": [
+    {
+      "seq": 0,
+      "name": "airspeed",
+      "command": 178,
+      "frame": 2,
+      "current": true,
+      "autocontinue": true,
+      "params": [
+        0,
+        15.433333333333334,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "north_m": 0,
+      "east_m": 0,
+      "height_m": 0
+    },
+    {
+      "seq": 1,
+      "name": "landing_start",
+      "command": 189,
+      "frame": 2,
+      "current": false,
+      "autocontinue": true,
+      "params": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "north_m": 0,
+      "east_m": 0,
+      "height_m": 0
+    },
+    {
+      "seq": 2,
+      "name": "descent_orbit",
+      "command": 31,
+      "frame": 6,
+      "current": false,
+      "autocontinue": true,
+      "params": [
+        1,
+        -100,
+        0,
+        1,
+        22.917470407836024,
+        120.30999295770486,
+        40
+      ],
+      "north_m": 800,
+      "east_m": -100,
+      "height_m": 40
+    },
+    {
+      "seq": 3,
+      "name": "touchdown",
+      "command": 21,
+      "frame": 6,
+      "current": false,
+      "autocontinue": true,
+      "params": [
+        0,
+        0,
+        0,
+        null,
+        22.922866337471536,
+        120.31096929726908,
+        0
+      ],
+      "north_m": 1400,
+      "east_m": 0,
+      "height_m": 0
+    }
+  ]
+}

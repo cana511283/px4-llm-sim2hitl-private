@@ -1,0 +1,158 @@
+{
+  "flight_quality": "NOT_GRADED",
+  "runs": [
+    {
+      "source": "SITL truth + Commander/landing stub",
+      "ulog_sha256": "c6952892ee41bd6af0b20ea1caa0c451b99a1f9a79af6af90965b29f83ffabb0",
+      "position_samples": 120047,
+      "position_median_interval_s": 0.0040000000000048885,
+      "initial_north_east_m": [
+        1.2593994332478547e-06,
+        -2.756034313200983e-05
+      ],
+      "terrain_valid_samples": 0,
+      "FW_LND_USETER": 0,
+      "FW_LND_ABORT": 3,
+      "distance_sensor_logged_samples": 0,
+      "dropouts": 0,
+      "truncated": false,
+      "final_EKF_or_truth_height_m": -0.000621013343334198,
+      "final_horizontal_speed_m_s": 4.75821998891022e-19,
+      "position_note": "SITL is plant truth; HITL is EKF. HITL height uses its own local origin, not physical penetration of the ground.",
+      "messages": [
+        {
+          "time_s": 181.768,
+          "text": "[navigator] Mission finished, landed\t"
+        }
+      ],
+      "position_nearest_arming": {
+        "time_s": 0.0,
+        "north_east_m": [
+          1.2593994332478547e-06,
+          -2.756034313200983e-05
+        ]
+      },
+      "auto_time_since_arming_s": 60.0,
+      "mission_sequences": [
+        {
+          "seq": 0,
+          "first_s": 0.6280000000000001
+        },
+        {
+          "seq": 1,
+          "first_s": 60.019999999999996
+        },
+        {
+          "seq": 2,
+          "first_s": 60.019999999999996
+        },
+        {
+          "seq": 3,
+          "first_s": 123.14
+        }
+      ],
+      "mission_finished": true,
+      "mission_failure_seen": false,
+      "orbit_turns_observed": 1.1719809801997851,
+      "orbit_measurement": {
+        "start_s": 73.604,
+        "end_s": 123.14,
+        "method": "unwrapped polar angle about N800/E-100 during seq2, radius70..130m; includes partial entry/exit arcs"
+      },
+      "landing_detected": {
+        "time_s": 181.764,
+        "position_sample_time_s": 181.764,
+        "height_m": -0.000621013343334198,
+        "horizontal_speed_m_s": 0.9893599152565002,
+        "north_east_m": [
+          1474.6182873922119,
+          0.004828081752076158
+        ]
+      },
+      "landing_abort_codes": [
+        0
+      ],
+      "first_CG_ground_plane_crossing": {
+        "time_s": 176.17200000000003,
+        "north_east_m": [
+          1439.9588635640869,
+          0.006161498191668996
+        ],
+        "horizontal_speed_m_s": 10.942627906799316,
+        "down_speed_m_s": 0.6054911613464355
+      }
+    },
+    {
+      "source": "HITL FC EKF + native landing detector",
+      "ulog_sha256": "9617b7ac54d705df1e7ce707942ee80af2ea8dda6938246030094b8af352fe17",
+      "position_samples": 1851,
+      "position_median_interval_s": 0.09999100000000283,
+      "initial_north_east_m": [
+        null,
+        null
+      ],
+      "terrain_valid_samples": 0,
+      "FW_LND_USETER": 0,
+      "FW_LND_ABORT": 3,
+      "distance_sensor_logged_samples": 0,
+      "dropouts": 0,
+      "truncated": false,
+      "final_EKF_or_truth_height_m": -0.28491848707199097,
+      "final_horizontal_speed_m_s": 0.28379198908805847,
+      "position_note": "SITL is plant truth; HITL is EKF. HITL height uses its own local origin, not physical penetration of the ground.",
+      "messages": [
+        {
+          "time_s": 185.164928,
+          "text": "[commander] Landing detected\t"
+        },
+        {
+          "time_s": 185.186981,
+          "text": "[navigator] Mission finished, landed\t"
+        }
+      ],
+      "position_nearest_arming": {
+        "time_s": 8.604178999999998,
+        "north_east_m": [
+          -0.02619890978927316,
+          -0.07098566226248361
+        ]
+      },
+      "auto_time_since_arming_s": 60.999827,
+      "mission_sequences": [
+        {
+          "seq": 0,
+          "first_s": 8.601264
+        },
+        {
+          "seq": 2,
+          "first_s": 61.01108200000001
+        },
+        {
+          "seq": 3,
+          "first_s": 123.68914
+        }
+      ],
+      "mission_finished": true,
+      "mission_failure_seen": false,
+      "orbit_turns_observed": 1.1717571077598385,
+      "orbit_measurement": {
+        "start_s": 75.198039,
+        "end_s": 123.59648599999998,
+        "method": "unwrapped polar angle about N800/E-100 during seq2, radius70..130m; includes partial entry/exit arcs"
+      },
+      "landing_detected": {
+        "time_s": 185.16256800000002,
+        "position_sample_time_s": 185.18643500000002,
+        "height_m": -0.28491848707199097,
+        "horizontal_speed_m_s": 0.28379198908805847,
+        "north_east_m": [
+          1499.5011538940341,
+          -0.026696186402642277
+        ]
+      },
+      "landing_abort_codes": [
+        0
+      ]
+    }
+  ]
+}

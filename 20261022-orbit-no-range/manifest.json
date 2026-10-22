@@ -1,0 +1,117 @@
+{
+  "source_commit": "96d4691",
+  "source_branch": "carrier-orbit-no-range-20261022",
+  "fc_log_id": 358,
+  "fc_log_sha256": "9617b7ac54d705df1e7ce707942ee80af2ea8dda6938246030094b8af352fe17",
+  "original_runner": "COMPLETE; recovery, mission restore, parameter restore, new log attribution and strict parse PASS",
+  "owner_snapshot_note": "Owner remained open. Files contain exactly the bytes captured at packaging; wire includes test, recovery and log downloads. No recovery markers or device operations were modified.",
+  "owner_snapshot_files": [
+    {
+      "file": "clock_sync.json",
+      "captured_bytes": 168,
+      "sha256": "398e05a93384e91f98a4bd1da56e2c224b07262966eae845546eba8219376bd3"
+    },
+    {
+      "file": "f606895c-bcd5-4931-ad6f-3d91ecd2f6b8.json",
+      "captured_bytes": 975,
+      "sha256": "431175db0552ce60f46df7cad367d5089eb11388f2b5d159896b2ec49732911b"
+    },
+    {
+      "file": "io_events.jsonl",
+      "captured_bytes": 242,
+      "sha256": "1cf754fde53b446d617bbd63fd3e5e62c88ebae3b9c0551842c82fb79b07e126"
+    },
+    {
+      "file": "pilot/stop",
+      "captured_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "runtime_source_manifest.json",
+      "captured_bytes": 6175,
+      "sha256": "a953e0af4bae446781a55ccf2dcc95bf97ad5de03bd505c340307a2ab5d69739"
+    },
+    {
+      "file": "timing.csv",
+      "captured_bytes": 1087984,
+      "sha256": "b02b361744fd9cb32baaee9faf360a6944c5c98b5f67e04a8fb5bc4523df08ca"
+    },
+    {
+      "file": "wire.bin",
+      "captured_bytes": 70144463,
+      "sha256": "710c51ae0e5b91ce2f7a9e28946d858514186cd907b5c408f0f447110f90972a"
+    }
+  ],
+  "run_archive_excluded": [
+    "fc-log/fc_log_358_20000101_000312Z.ulg",
+    "fc-log-again/fc_log_358_20000101_000312Z.ulg",
+    "restore-recipe/firmware/cubepilot_cubeorangeplus_hil.px4",
+    "restore-recipe/firmware/firmware.json",
+    "restore-recipe/firmware/parameters.json.xz",
+    "trial-recipe/firmware/cubepilot_cubeorangeplus_hil.px4",
+    "trial-recipe/firmware/firmware.json",
+    "trial-recipe/firmware/parameters.json.xz"
+  ],
+  "files": {
+    "analysis.json": {
+      "bytes": 4688,
+      "sha256": "52d0b772ffa0584cc3cbc60f338f924ac5c0ad52c14abb80e420202af3954500"
+    },
+    "cleanup.json": {
+      "bytes": 485,
+      "sha256": "01331e9281e81d4efa1557eadc237f3d88f35f36b6b781e0767c1068ff0508a1"
+    },
+    "fc-log-358.zip": {
+      "bytes": 8014913,
+      "sha256": "6982f9b22a7b4f91b5110c1a8155910a435a26ff21a46ae23a69c07202411152"
+    },
+    "hitl-run-evidence.zip": {
+      "bytes": 9620186,
+      "sha256": "755432ef829c90ddb8cd9bc54da9507c1fd7d961f8a0bf0fcb286de08ea987a3"
+    },
+    "mission-plan/carrier_orbit_landing.plan": {
+      "bytes": 1621,
+      "sha256": "22bb06d86677e31732e84692585d2baab389f7e306f2d1f6d200a91e0b505539"
+    },
+    "mission-plan/mission.json": {
+      "bytes": 1607,
+      "sha256": "b31138b8b512f14bdc4e18dee62700528c4591c3c8004efce53fb5d7b5d7e210"
+    },
+    "offline-tests.log": {
+      "bytes": 225,
+      "sha256": "2d9d5adc0fdcff1ce1c0f6179a90f6b5215f8e1606e8adf72a2d8286319e3e47"
+    },
+    "owner-wire-and-timing.zip": {
+      "bytes": 30322048,
+      "sha256": "becf0ce597d64879664fc309074b4aa384fd0fab2010717070d22d4be58f854d"
+    },
+    "report.md": {
+      "bytes": 3107,
+      "sha256": "72cc069077179d3a35a500a505c6e37fcaf333a2378f3edfa104451451cc9f5f"
+    },
+    "runner-result.json": {
+      "bytes": 345259,
+      "sha256": "17982abf156c2d9818a87af875e1f6fc67bb4a366c465e3812e1ac7c1f424895"
+    },
+    "runtime-identity-tests.log": {
+      "bytes": 550,
+      "sha256": "a944eced96219164cf3e8eb800f1937ec00474b0e2ec62e4344e8377ae9befb0"
+    },
+    "sitl-run.json": {
+      "bytes": 1229,
+      "sha256": "862a533fbfd1c52b3ed8fe7bcb3f34d649766c94655b2b0ccb3dc1421f032591"
+    },
+    "source.bundle": {
+      "bytes": 6477879,
+      "sha256": "ab9c6e141ad3f2b9235cdcd98eac8b3c629c24c44d5b88980d450340041b8a31"
+    },
+    "source.zip": {
+      "bytes": 6415295,
+      "sha256": "3bfa0586b1396dbaa97371f384ed0c7cc1bcdae0fa9aa918263011f7dfc1d5b2"
+    },
+    "trajectory.png": {
+      "bytes": 158437,
+      "sha256": "f50626c7a8e8165a84ef58d52759561ee5aaa54b255ec0fe9f519f57b8f20832"
+    }
+  }
+}
