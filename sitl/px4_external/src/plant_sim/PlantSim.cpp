@@ -54,6 +54,7 @@ bool PlantSim::load_scenario()
 	while (fgets(line, sizeof(line), f)) {
 		char word[16] {};
 		double v[9] {};
+		int terrain_valid = -1;
 
 		if (sscanf(line, "%15s", word) != 1 || word[0] == '#') {
 			continue;
@@ -136,6 +137,9 @@ bool PlantSim::load_scenario()
                 return false;
             }
             _have_carrier = true;
+		} else if (!strcmp(word, "terrain_valid") && sscanf(line, "%*s %d", &terrain_valid) == 1
+                   && (terrain_valid == 0 || terrain_valid == 1)) {
+            _terrain_measurement = terrain_valid == 1;
 		} else if (!strcmp(word, "auto_after") && sscanf(line, "%*s %lf", &v[0]) == 1) {
             _auto_after_s = v[0];
         } else if (!strcmp(word, "mission") && _mission_count < 32
@@ -337,7 +341,7 @@ void PlantSim::publish_truth(hrt_abstime now, const PlantTruth &t, const PlantSe
 	lpos.heading_good_for_control = true;
 	lpos.unaided_heading = NAN;
 	lpos.dist_bottom = (float)t.height_agl_m;
-	lpos.dist_bottom_valid = true;
+	lpos.dist_bottom_valid = _terrain_measurement;
 	lpos.eph = lpos.epv = 0.01f;
 	lpos.evh = lpos.evv = 0.01f;
 	lpos.vxy_max = lpos.vz_max = lpos.hagl_min = lpos.hagl_max_z = lpos.hagl_max_xy = INFINITY;
@@ -351,7 +355,7 @@ void PlantSim::publish_truth(hrt_abstime now, const PlantTruth &t, const PlantSe
 	gpos.alt = (float)t.altitude_msl_m;
 	gpos.alt_ellipsoid = gpos.alt;
 	gpos.terrain_alt = (float)(t.altitude_msl_m - t.height_agl_m);
-	gpos.terrain_alt_valid = true;
+	gpos.terrain_alt_valid = _terrain_measurement;
 	gpos.eph = gpos.epv = 0.01f;
 	gpos.timestamp = now;
 	_global_position_pub.publish(gpos);

@@ -46,6 +46,7 @@ Linux ldd) and warns when it is not the active model release's (rebuild with bui
 both. --instance-base N numbers the PX4 instances from N (their /tmp/px4-sock-<n>), so two runs at the same
 time do not collide.
 """
+import importlib
 import argparse
 import json
 import math
@@ -176,8 +177,12 @@ def scenario_text(scenario, params):
         if scenario['mode'] != 'mission' or 'carrier' not in scenario:
             raise ValueError('native circuit requires mission mode and carrier')
         sys.path.insert(0, str(ROOT / 'missions'))
-        from carrier_circuit import sitl_lines
-        lines.extend(sitl_lines())
+        profile=scenario.get('native_mission_profile','carrier_circuit')
+        if profile not in ('carrier_circuit','carrier_orbit_landing'):raise ValueError('Unknown native mission profile')
+        lines.extend(importlib.import_module(profile).sitl_lines())
+    if 'terrain_measurement' in scenario:
+        if type(scenario['terrain_measurement']) is not bool:raise ValueError('terrain_measurement must be boolean')
+        lines.append('terrain_valid '+str(int(scenario['terrain_measurement'])))
     settle = scenario.get('settle_s', 0.0)  # step times in the JSON are counted after the settling time
     for step in scenario.get('steps', []):
         lines.append('step {:.9g} {:.9g} {:.9g} {:.9g} {:.9g} {:.9g}'.format(
@@ -289,8 +294,10 @@ def main():
     scenario = json.loads(args.scenario.read_text())
     if scenario.get('native_carrier_circuit'):
         sys.path.insert(0, str(ROOT / 'missions'))
-        from carrier_circuit import PARAMETERS
-        params.update({k: (str(v), 9) for k, v in PARAMETERS.items()})
+        profile=scenario.get('native_mission_profile','carrier_circuit')
+        if profile not in ('carrier_circuit','carrier_orbit_landing'):raise ValueError('Unknown native mission profile')
+        parameters=importlib.import_module(profile).PARAMETERS
+        params.update({k: (str(v), 6 if isinstance(v,int) else 9) for k, v in parameters.items()})
     duration = args.duration or scenario.get('settle_s', 0.0) + scenario['duration_s']
     text, trim_result, wind_reminders = scenario_text(scenario, params)
     for reminder in wind_reminders:

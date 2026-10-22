@@ -1,0 +1,32 @@
+{
+  "name": "carrier_native_orbit_no_range",
+  "description": "Carrier release directly into native orbit descent and landing, no terrain measurements. Truth/Commander stub; not FC EKF or landing detector validation.",
+  "mode": "mission",
+  "settle_s": 0,
+  "duration_s": 480,
+  "initial": {
+    "height_agl_m": 0,
+    "airspeed_m_s": 0,
+    "heading_deg": 0,
+    "latitude_deg": 22.910275834988674,
+    "longitude_deg": 120.31096929726908
+  },
+  "trim": false,
+  "carrier": {
+    "wait_s": 10,
+    "climb_s": 40,
+    "cruise_s": 10,
+    "height_m": 100,
+    "speed_m_s": 15.433333333333334
+  },
+  "base_sticks": {
+    "roll": 0,
+    "pitch": 0,
+    "yaw": 0,
+    "throttle": -1
+  },
+  "steps": [],
+  "native_carrier_circuit": true,
+  "native_mission_profile": "carrier_orbit_landing",
+  "terrain_measurement": false
+}

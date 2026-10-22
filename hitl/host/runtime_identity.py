@@ -15,6 +15,7 @@ def source_files(project):
         'hitl/native_circuit.py',
         'hitl/mission_protocol.py',
         'missions/carrier_circuit.py',
+        'missions/carrier_orbit_landing.py',
         'hitl/flight_test.json',
         'pyproject.toml',
         'uv.lock',

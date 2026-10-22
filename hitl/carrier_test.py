@@ -25,10 +25,11 @@ from host import runtime_identity
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--scenario',type=Path,required=True);p.add_argument('--release',type=Path,required=True)
- p.add_argument('--out',type=Path,required=True);p.add_argument('--circuit',action='store_true');a=p.parse_args()
+ p.add_argument('--mission-profile',choices=['carrier_circuit','carrier_orbit_landing'],default='carrier_circuit');p.add_argument('--out',type=Path,required=True);p.add_argument('--circuit',action='store_true');a=p.parse_args()
  if a.out.exists():raise ValueError('Use a new output directory; previous evidence is preserved')
  scene,_=load_scene(a.scenario)
  if 'carrier' not in scene:raise ValueError('Expected an explicit carrier scenario')
+ if a.mission_profile=='carrier_orbit_landing' and (not a.circuit or scene.get('flat_rangefinder',False)):raise ValueError('Orbit no-range profile requires --circuit and disabled rangefinder')
  c=scene['carrier'];release_s=c['wait_s']+c['climb_s']+c['cruise_s']
  if not 1<=c['wait_s']<=30 or not 10<=c['climb_s']<=120 or not 5<=c['cruise_s']<=30:
   raise ValueError('First carrier test requires wait 1..30 s, climb 10..120 s, cruise 5..30 s')
@@ -84,7 +85,7 @@ def main():
   if a.circuit:
    from native_circuit import NativeCircuit
    native=NativeCircuit(a,call,link,b);native.prepare()
-   result['scope']='carrier release, native AUTO five-leg circuit, orbit descent and landing; performance not graded'
+   result['scope']=native.result['scope']
   # From here onward a failure always stops the model and runs standard recovery.
   started=True;call('model-start',{'scene':scene})
   v=Vehicle();phase='telemetry';phase_at=time.monotonic();begin=phase_at;hb_at=0;sent_mode=False;arm_sent=False;released_at=None
@@ -127,7 +128,7 @@ def main():
      cp=(s.get('model_truth') or {}).get('carrier_phase')
      if cp==3 and released_at is None:
       phase='released';released_at=now;result['release_observed']=s
-      print('Carrier released; observing free-flight stabilization for 40 s',flush=True)
+      print(f'Carrier released; AUTO delay {native.auto_delay} s' if native else 'Carrier released; observing free-flight stabilization for 40 s',flush=True)
      if native and released_at is not None:
       if native.flight_step(v,now,released_at,s):break
      elif released_at is not None and now-released_at>=40:break

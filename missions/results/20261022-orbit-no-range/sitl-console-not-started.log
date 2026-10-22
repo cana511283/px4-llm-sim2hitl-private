@@ -1,0 +1,28 @@
+INFO  [px4] instance: 80
+INFO  [px4] assuming working directory is rootfs, no symlinks needed.
+ERROR [px4_daemon] error binding socket /tmp/px4-sock-80, error = Operation not permitted
+
+______  __   __    ___ 
+| ___ \ \ \ / /   /   |
+| |_/ /  \ V /   / /| |
+|  __/   /   \  / /_| |
+| |     / /^\ \ \___  |
+\_|     \/   \/     |_/
+
+px4 starting.
+
+INFO  [px4] startup script: /bin/sh /home/iec-dynabook/Documents/Codex/2026-10-22/https-github-com-cana511283-px4-llm-3/work/o
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4_daemon] error connecting to socket: Operation not permitted
+ERROR [px4] Startup script returned with return value: 65280

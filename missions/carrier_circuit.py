@@ -21,9 +21,9 @@ ROWS=[('airspeed',178,0,0,0,[0,SPEED,-1,0]),
 # Proposed aircraft-specific trim, not an instruction to modify the physical FC.
 PARAMETERS={'FW_THR_TRIM':.121,'FW_AIRSPD_TRIM':SPEED}
 
-def items():
+def items(rows=ROWS):
  result=[]
- for seq,(name,cmd,n,e,h,params) in enumerate(ROWS):
+ for seq,(name,cmd,n,e,h,params) in enumerate(rows):
   lat=LAT+math.degrees(n/6371000);lon=LON+math.degrees(e/(6371000*math.cos(math.radians(LAT))))
   result.append(dict(seq=seq,name=name,command=cmd,frame=6 if cmd in [16,31,21] else 2,
    current=seq==0,autocontinue=True,params=params+[lat if cmd in [16,31,21] else 0,lon if cmd in [16,31,21] else 0,h],
@@ -37,16 +37,16 @@ def sitl_lines():
   lines.append('mission '+' '.join(str(x) for x in [item['command'],*p]))
  return lines
 
-def export(out):
+def export(out, data=None, parameters=PARAMETERS, auto_after_release_s=40, plan_name="carrier_circuit.plan"):
  out=Path(out);out.mkdir(parents=True,exist_ok=True)
- data=items();(out/'mission.json').write_text(json.dumps({'version':1,'origin':[LAT,LON,0],
-  'auto_after_release_s':40,'parameters_proposed':PARAMETERS,'items':data},indent=2)+'\n')
+ data=items() if data is None else data;(out/'mission.json').write_text(json.dumps({'version':1,'origin':[LAT,LON,0],
+  'auto_after_release_s':auto_after_release_s,'parameters_proposed':parameters,'items':data},indent=2)+'\n')
  plan={'fileType':'Plan','version':1,'groundStation':'QGroundControl',
  'geoFence':{'circles':[],'polygons':[],'version':2},'rallyPoints':{'points':[],'version':2},
  'mission':{'cruiseSpeed':SPEED,'hoverSpeed':5,'firmwareType':12,'vehicleType':1,'version':2,
  'plannedHomePosition':[LAT,LON,0],'items':[{'type':'SimpleItem','autoContinue':True,'command':v['command'],
   'doJumpId':v['seq']+1,'frame':3 if v['frame']==6 else v['frame'],'params':v['params']} for v in data]}}
- (out/'carrier_circuit.plan').write_text(json.dumps(plan,indent=2)+'\n')
+ (out/plan_name).write_text(json.dumps(plan,indent=2)+'\n')
  if math.degrees(math.atan2(40,600))>5:raise ValueError('Approach exceeds default FW_LND_ANG')
  return data
 if __name__=='__main__':

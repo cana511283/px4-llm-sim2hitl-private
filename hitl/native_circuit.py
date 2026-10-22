@@ -3,7 +3,7 @@ All mission writes are gated unarmed through the sole owner; parameter changes
 use the existing transactional param-deploy, with a separate exact-value restore
 recipe derived from the pre-test readback. No firmware writes.
 """
-import json,math,shutil,sys,time
+import json,math,shutil,sys,time,importlib
 from pathlib import Path
 from autotakeoff.autotakeoff import mav,TARGET
 from mission_protocol import MissionExchange,save
@@ -13,12 +13,16 @@ from carrier_circuit import items,PARAMETERS,export
 
 class NativeCircuit:
  def __init__(self,args,call,link,before):
+  profile=getattr(args,'mission_profile','carrier_circuit')
+  if profile not in ('carrier_circuit','carrier_orbit_landing'):raise ValueError('Unknown native mission profile')
+  self.mission=importlib.import_module(profile)
+  self.auto_delay=getattr(self.mission,'AUTO_AFTER_RELEASE_S',40)
   self.args=args;self.call=call;self.link=link;self.before=before
   self.exchange=MissionExchange(link,self.gate)
   self.backup=None;self.params_attempted=False;self.mission_attempted=False
   self.mode_sent=False;self.mode_at=None;self.last_seq=None;self.landed=False;self.finished=False
   self.sequence_at=-math.inf;self.landed_at=-math.inf
-  self.result={'scope':'native five-leg circuit and orbit landing; performance not graded'}
+  self.result={'scope':profile+'; performance not graded','auto_after_release_s':self.auto_delay}
  def gate(self):
   s=self.call('status')
   if (s['fc']['identity']!=list(TARGET) or s['fc']['armed'] is not False or s['fc']['SYS_HITL']!=1
@@ -39,13 +43,13 @@ class NativeCircuit:
  def prepare(self):
   self.gate();self.backup=self.exchange.download();save(self.args.out/'mission-before.json',self.backup)
   before=json.loads(Path(self.before['path']).read_text());values={v['name']:v['value'] for v in before['parameters']}
-  self.restore_recipe=self.recipe('restore-recipe',{k:values[k] for k in PARAMETERS})
-  trial=self.recipe('trial-recipe',PARAMETERS);export(self.args.out/'mission-plan')
+  self.restore_recipe=self.recipe('restore-recipe',{k:values[k] for k in self.mission.PARAMETERS})
+  trial=self.recipe('trial-recipe',self.mission.PARAMETERS);self.mission.export(self.args.out/'mission-plan')
   self.params_attempted=True
   r=self.call('param-deploy',{'release':str(trial.resolve()),'out':str((self.args.out/'trial-parameters').resolve())})
   if r.get('verdict')!='PASS':raise RuntimeError('Trial parameter deployment did not pass')
   self.mission_attempted=True
-  self.exchange.upload(items());self.result['mission_upload']='PASS';self.result['parameters_trial']=r
+  self.exchange.upload(self.mission.items());self.result['mission_upload']='PASS';self.result['parameters_trial']=r
  def update(self,msg):
   if (msg.get_srcSystem(),msg.get_srcComponent())!=TARGET:return
   kind=msg.get_type()
@@ -57,17 +61,17 @@ class NativeCircuit:
    self.landed=msg.landed_state==mav.MAV_LANDED_STATE_ON_GROUND
    self.landed_at=time.monotonic()
  def flight_step(self,v,now,released_at,status):
-  if now-released_at<40:return False
+  if now-released_at<self.auto_delay:return False
   if not self.mode_sent:
    self.link.send(mav.MAVLink_command_long_message(*TARGET,mav.MAV_CMD_DO_SET_MODE,0,1,4,4,0,0,0,0))
-   self.mode_sent=True;self.mode_at=now;print('Requesting native AUTO_MISSION after 40 s stabilization',flush=True)
+   self.mode_sent=True;self.mode_at=now;print(f'Requesting native AUTO_MISSION after {self.auto_delay} s stabilization',flush=True)
   if v.mode!=4 or v.sub_mode!=4:
    if now-self.mode_at>4:raise RuntimeError('Native AUTO_MISSION not confirmed, or unexpectedly exited')
    return False
   if now-self.sequence_at>3 or now-self.landed_at>3:
    raise RuntimeError('Mission or landed-state telemetry stale')
   if self.landed and math.isfinite(v.height) and v.height<2 and status.get('telemetry',{}).get('VFR_HUD',{}).get('values',{}).get('groundspeed_m_s',math.inf)<1:
-   if self.last_seq!=len(items())-1:raise RuntimeError('Landed before final mission item')
+   if self.last_seq!=len(self.mission.items())-1:raise RuntimeError('Landed before final mission item')
    self.result.update(landing_observed=True,final_seq=self.last_seq,mission_finished_telemetry=self.finished,
     landing_status=status);return True
   if now-self.mode_at>900:raise RuntimeError('Native mission bounded flight timeout')

@@ -63,6 +63,7 @@ def main(argv=None):
     p.add_argument('--port', default='auto')
     p.add_argument('--aircraft', default='skysurfer')
     p.add_argument('--scenario', type=Path)
+    p.add_argument('--mission-profile', choices=['carrier_circuit','carrier_orbit_landing'], default='carrier_circuit')
     p.add_argument('--log-dir', type=Path)
     p.add_argument('--out', type=Path,
                    help='fetch-log: directory for the downloaded FC ULog; param-readback/-plan/-deploy: directory for the files')
@@ -145,7 +146,7 @@ def main(argv=None):
             raise ValueError('carrier-run needs --scenario, --release and a new --out')
         return subprocess.call([sys.executable, '-B', str(RUNTIME / 'carrier_test.py'),
                                 '--scenario', str(args.scenario), '--release', str(args.release),
-                                '--out', str(args.out)] + (['--circuit'] if args.action == 'carrier-circuit-run' else []))
+                                '--out', str(args.out)] + (['--circuit', '--mission-profile', args.mission_profile] if args.action == 'carrier-circuit-run' else []))
     if args.action == 'hitl-run':
         if extra:
             raise ValueError('Unknown hitl-run arguments: ' + ' '.join(extra))

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "aircraft_id": "skysurfer",
+  "name": "\u6bcd\u6a5f\u91cb\u653e\u5f8c\u76f4\u63a5\u76e4\u65cb\u964d\u843d\uff0c\u505c\u7528\u5411\u4e0b\u6e2c\u8ddd",
+  "height_agl_m": 0,
+  "velocity_mode": "tas",
+  "tas_m_s": 0,
+  "alpha_deg": 0,
+  "beta_deg": 0,
+  "euler_deg": [
+    0,
+    0,
+    0
+  ],
+  "latitude_deg": 22.910275834988674,
+  "longitude_deg": 120.31096929726908,
+  "site_msl_m": 0,
+  "geoid_separation_m": 0,
+  "wind_ned_m_s": [
+    0,
+    0,
+    0
+  ],
+  "angular_rates_rad_s": [
+    0,
+    0,
+    0
+  ],
+  "seed_policy": 0,
+  "carrier": {
+    "wait_s": 10,
+    "climb_s": 40,
+    "cruise_s": 10,
+    "height_m": 100,
+    "speed_m_s": 15.433333333333334
+  },
+  "flat_rangefinder": false
+}

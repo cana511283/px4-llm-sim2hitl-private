@@ -88,6 +88,7 @@ private:
 	bool _acro{false};
 	bool _offboard{false};  // OFFBOARD with offboard_control_mode.velocity (a module of modules/ does the guidance)
 	bool _native_mission{false};
+	bool _terrain_measurement{true};
 	bool _auto_active{false};
 	float _auto_after_s{100.f};
 	mission_item_s _mission_items[32] {};

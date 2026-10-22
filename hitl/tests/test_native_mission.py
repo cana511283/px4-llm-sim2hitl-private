@@ -6,6 +6,8 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from mission_protocol import MissionExchange
 from autotakeoff.autotakeoff import mav,SOURCE
 from native_circuit import NativeCircuit,items,PARAMETERS
+import carrier_circuit
+import carrier_orbit_landing as orbit
 
 def fc(msg):
  msg._header.srcSystem=1;msg._header.srcComponent=1;return msg
@@ -73,7 +75,7 @@ class Tests(unittest.TestCase):
   b=copy.deepcopy(items());b[3]['params'][5]+=1e-5
   self.assertFalse(MissionExchange.equal(items(),b))
  def test_landing_requires_final_item_and_stopped(self):
-  n=NativeCircuit.__new__(NativeCircuit);n.link=Link();n.mode_sent=False;n.result={};n.landed=True;n.last_seq=9;n.finished=False
+  n=NativeCircuit.__new__(NativeCircuit);n.mission=carrier_circuit;n.auto_delay=40;n.link=Link();n.mode_sent=False;n.result={};n.landed=True;n.last_seq=9;n.finished=False
   n.sequence_at=n.landed_at=42
   v=SimpleNamespace(mode=7,sub_mode=0,height=.1)
   self.assertFalse(n.flight_step(v,41,0,{}));self.assertTrue(n.mode_sent)
@@ -99,4 +101,42 @@ class Tests(unittest.TestCase):
   x=MissionExchange(Link(),lambda:None)
   actual=x.upload(a)
   self.assertEqual(actual[-2]['params'][1],-100)
+class OrbitTests(unittest.TestCase):
+ def test_no_range_mission_protocol_roundtrip(self):
+  a=orbit.items()
+  self.assertEqual([i['command'] for i in a],[178,189,31,21])
+  self.assertTrue(MissionExchange.equal(a,MissionExchange(Link(),lambda:None).upload(a)))
+  self.assertEqual(orbit.PARAMETERS['FW_LND_USETER'],0)
+  self.assertEqual(set(orbit.PARAMETERS),{'FW_LND_USETER','FW_THR_TRIM','FW_AIRSPD_TRIM'})
+ def test_release_enters_auto_without_observation_delay(self):
+  n=NativeCircuit(SimpleNamespace(mission_profile='carrier_orbit_landing'),None,Link(),None)
+  self.assertFalse(n.flight_step(SimpleNamespace(mode=7,sub_mode=0),60,60,{}))
+  self.assertTrue(n.mode_sent)
+  self.assertEqual(n.auto_delay,0)
+ def test_no_early_touchdown_success(self):
+  n=NativeCircuit(SimpleNamespace(mission_profile='carrier_orbit_landing'),None,Link(),None)
+  n.mode_sent=True;n.mode_at=60;n.last_seq=2;n.landed=True;n.sequence_at=n.landed_at=61
+  with self.assertRaisesRegex(RuntimeError,'before final'):
+   n.flight_step(SimpleNamespace(mode=4,sub_mode=4,height=0),61,60,{'telemetry':{'VFR_HUD':{'values':{'groundspeed_m_s':0}}}})
+ def test_invalid_profile_rejected(self):
+  with self.assertRaisesRegex(ValueError,'Unknown native'):
+   NativeCircuit(SimpleNamespace(mission_profile='arbitrary_module'),None,None,None)
+ def test_trial_and_exact_restore_include_terrain_parameter(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=Path(folder);src=root/'base';(src/'firmware').mkdir(parents=True)
+   (src/'firmware/image.px4').write_bytes(b'fixture');(src/'params.json').write_text('{"set":{}}')
+   before=root/'before.json';original={'FW_THR_TRIM':.6,'FW_AIRSPD_TRIM':15.,'FW_LND_USETER':1}
+   before.write_text(json.dumps({'parameters':[{'name':k,'value':v} for k,v in original.items()]}))
+   out=root/'out';out.mkdir();link=Link(items());initial=copy.deepcopy(link.stored)
+   def call(action,args=None):
+    if action=='status':return {'fc':{'identity':[1,1],'armed':False,'SYS_HITL':1,'heartbeat_age_s':0},'model':'stopped','recovery_required':False,'param_deploy_pending':None}
+    return {'verdict':'PASS'}
+   n=NativeCircuit(SimpleNamespace(out=out,release=src,mission_profile='carrier_orbit_landing'),call,link,{'path':str(before)})
+   n.prepare()
+   trial=json.loads((out/'trial-recipe/params.json').read_text())['set']
+   restore=json.loads((out/'restore-recipe/params.json').read_text())['set']
+   self.assertEqual(trial['FW_LND_USETER']['value'],0)
+   self.assertEqual({k:v['value'] for k,v in restore.items()},original)
+   self.assertEqual(len(link.stored),4)
+   n.restore();self.assertTrue(MissionExchange.equal(initial,link.stored))
 if __name__=='__main__':unittest.main()
