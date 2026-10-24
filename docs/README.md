@@ -1,5 +1,7 @@
 # 技術文件
 
+[檔案分類與維護規則](ORGANIZATION.md)：後續更新均依此執行。
+
 - [飛控差異與接手檢查](fc/README.md)
 - [Cube Orange+](fc/cubeorangeplus.md)
 - [macOS 平台](platforms/macos.md)

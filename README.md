@@ -1,5 +1,7 @@
 # px4-llm-sim2hitl
 
+[檔案分類與維護規則](docs/ORGANIZATION.md)：後續更新均依此執行。
+
 [技術文件](docs/README.md) · [實驗紀錄](experiments/README.md) · 分析工具保留於 `analysis/`。
 
 **繁體中文** | [English](README.en.md)

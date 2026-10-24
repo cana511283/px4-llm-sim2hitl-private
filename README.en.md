@@ -1,10 +1,12 @@
 # px4-llm-sim2hitl
 
+[File organization and maintenance rules](docs/ORGANIZATION.md) (Traditional Chinese).
+
 [Technical documents](docs/README.md) · [Experiment records](experiments/README.md) · Analysis tools remain in `analysis/`.
 
 [繁體中文](README.md) | **English**
 
-> **This is a translation.** The authoritative README is [README.md](README.md) (Traditional Chinese); where the two differ, follow README.md. Translated from README.md with SHA-256 `125e444392fe60d3bbb2399de256035b1ebe586550dc3c4e2d63a38b6c7124db`: if `sha256sum README.md` prints something else, this translation is behind. The AI rules ([AGENTS.md](AGENTS.md)) and the folder READMEs are in Traditional Chinese only; an AI agent reads them without trouble.
+> **This is a translation.** The authoritative README is [README.md](README.md) (Traditional Chinese); where the two differ, follow README.md. Translated from README.md with SHA-256 `2b7bdfbd6d6bc5a903d9af082a6523f4c888a844980b7f9455702270ca0f7178`: if `sha256sum README.md` prints something else, this translation is behind. The AI rules ([AGENTS.md](AGENTS.md)) and the folder READMEs are in Traditional Chinese only; an AI agent reads them without trouble.
 
 Flight-control development kit: MATLAB/Simulink aircraft model → C → SITL (minimal PX4) → custom PX4 firmware → HITL on a real flight controller (Pixhawk). When you develop with an AI, its working rules are in [AGENTS.md](AGENTS.md).
 
