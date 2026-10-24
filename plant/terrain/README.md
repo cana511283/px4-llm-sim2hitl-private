@@ -23,4 +23,4 @@ cc -std=c11 -Wall -Wextra -Werror -I plant/include plant/terrain/test_flat_groun
 
 檢查包含 100 m 垂直距離、3-4-5 斜距、射線尺度不變性、量程邊界、地下／平行／向上／非法射線。2026-10-22 PASS。
 
-2026-10-22 Cube Orange+ 實測已確認接收 distance_sensor、產生有效 EKF 對地高度並完成原生航線降落流程；詳見 [任務結果](../../missions/README.md)。仍使用理想模擬測距，未代表實體感測器規格或實機著陸品質。
+2026-10-22 Cube Orange+ 實測已確認接收 distance_sensor、產生有效 EKF 對地高度並完成原生航線降落流程；詳見 [任務結果](../../docs/missions/README.md)。仍使用理想模擬測距，未代表實體感測器規格或實機著陸品質。

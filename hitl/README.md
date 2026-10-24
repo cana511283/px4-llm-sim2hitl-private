@@ -127,6 +127,6 @@ for f in hitl/tests/test_*.py deploy/test_*.py; do "$PY" -B "$f"; done
 
 ## 母機釋放後飛五邊與盤旋降落
 
-第二階段的 `carrier-circuit-run` 使用原生 AUTO_MISSION，會暫時部署兩項配平參數及航點；先備份，結束後用原值還原，再核對新 log。首次新任務上 FC 前須人確認。規格、SITL 結果與限制見 [missions README](../missions/README.md)。原來的 `carrier-run` 仍只做釋放後 40 s 姿態觀察。
+第二階段的 `carrier-circuit-run` 使用原生 AUTO_MISSION，會暫時部署兩項配平參數及航點；先備份，結束後用原值還原，再核對新 log。首次新任務上 FC 前須人確認。規格、SITL 結果與限制見 [missions README](../docs/missions/README.md)。原來的 `carrier-run` 仍只做釋放後 40 s 姿態觀察。
 
-平面向下測距（選用，25 Hz）見 [地面幾何與測距](../plant/terrain/README.md)，範例 `scenarios/carrier_release_flat_range.json`。新版 release 才可啟用；2026-10-22 已完成 Cube EKF 接收及模擬降落流程驗證，詳見 [任務結果](../missions/README.md)；未評定實機著陸品質。
+平面向下測距（選用，25 Hz）見 [地面幾何與測距](../plant/terrain/README.md)，範例 `scenarios/carrier_release_flat_range.json`。新版 release 才可啟用；2026-10-22 已完成 Cube EKF 接收及模擬降落流程驗證，詳見 [任務結果](../docs/missions/README.md)；未評定實機著陸品質。

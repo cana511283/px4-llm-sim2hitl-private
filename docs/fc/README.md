@@ -1,6 +1,6 @@
 # fc：不同飛控的理解
 
-專案在 Pixhawk 6C 上建立；2026-10-20 第一次換到另一塊飛控（CubePilot Cube Orange+）把整輪走完。本資料夾寫「換一塊飛控時，哪些地方會不同、怎麼確認」，每塊飛控一個檔（目前是 [cubeorangeplus.md](cubeorangeplus.md)；6C 的細節在 [deploy/00_native](../deploy/00_native/README.md)）。這是理解，不是安裝腳本：換到新的飛控或新的 PX4 版本時，照下面的清單重新查原始碼與實機，查到和本文不同的現象先留證據，再提議更新。
+專案在 Pixhawk 6C 上建立；2026-10-20 第一次換到另一塊飛控（CubePilot Cube Orange+）把整輪走完。本資料夾寫「換一塊飛控時，哪些地方會不同、怎麼確認」，每塊飛控一個檔（目前是 [cubeorangeplus.md](cubeorangeplus.md)；6C 的細節在 [deploy/00_native](../../deploy/00_native/README.md)）。這是理解，不是安裝腳本：換到新的飛控或新的 PX4 版本時，照下面的清單重新查原始碼與實機，查到和本文不同的現象先留證據，再提議更新。
 
 ## 飛控差異放在哪一層
 
@@ -22,7 +22,7 @@ FC 只有一個序列埠可接：`deploy-test` 的計畫會列出 FC 現在符�
 4. **USB 名稱**：韌體與 bootloader 各叫什麼，燒錄時另開一個視窗每 0.5 s 記一次 `ls /dev/serial/by-id/`。runtime 靠名稱認出 bootloader（`hitl/host/serial_helpers.py` 的 `BOOTLOADER_LABEL`），認不出來就補上：FC 停在 bootloader 時 owner 不可以連上去送 MAVLink（bootloader 的燒錄協定裡有抹除指令）。
 5. **開機腳本設的參數**：板子的 `init/rc.board_defaults`、晶片的 `platforms/nuttx/init/<晶片>/rc.board_arch_defaults`、`rcS` 的 HITL 分支，寫進配方的 `boot`（只核對、不寫）。韌體的參數名單每塊板子不同（6C 2,038 個、Cube Orange+ 的 hil 版 1,979 個），名單裡沒有的參數不能放進配方。
 6. **IO 處理器與安全開關**：有 px4io 的板子（Cube）不論是否 HITL 都會啟動 px4io，它一啟動就宣告安全開關存在。v1.17 的 `CBRK_IO_SAFETY` 預設 22027（不用按），所以照預設沒事；有人把它改成 0 時，只接 USB、沒接安全開關的 HITL 會因「Press safety button first」解鎖不了。
-7. **記憶卡**：STM32H7 的板子要套 NuttX 的 SD 卡讀取修正（[AGENTS](../AGENTS.md) 第 1 段）；看 defconfig 有沒有 `CONFIG_STM32H7_SDMMC1`／`SDMMC2` 與 `CONFIG_ARMV7M_DCACHE`。修正後 FC 回報的 NuttX hash 跟板子無關（6C 與 Cube 都是 `8d3ed2a2…`）。
+7. **記憶卡**：STM32H7 的板子要套 NuttX 的 SD 卡讀取修正（[AGENTS](../../AGENTS.md) 第 1 段）；看 defconfig 有沒有 `CONFIG_STM32H7_SDMMC1`／`SDMMC2` 與 `CONFIG_ARMV7M_DCACHE`。修正後 FC 回報的 NuttX hash 跟板子無關（6C 與 Cube 都是 `8d3ed2a2…`）。
 8. **參數存放**：nsh 的 `mtd status` 要有 `/fs/mtd_params`。例外的例子：fmu-v3 的副廠板用 16 KiB 的 FRAM，PX4 1.15 起切不出 32 KiB 的參數區，參數存不住。
 9. **PX4 主 repo 的 patch 會讓版本變成 dev**：patch commit 在 PX4 主 repo（不是子模組）時，`git describe` 變成 `v1.17.0-1-g…`，FC 回報的版本類型從 release 變成 dev（`flight_sw_version` 最低位元組 255 → 0）。身分核對比的是 hash，不受影響；QGC 會顯示 dev 版。
 
@@ -30,7 +30,7 @@ FC 只有一個序列埠可接：`deploy-test` 的計畫會列出 FC 現在符�
 
 `param-deploy` 照設計只寫配方的 `set`。FC 上別的值（在 QGC 改過的機身舵面、遙控模式槽、EKF 設定……）會讓部署被擋下（`airframe`／`boot` 的值不同：not written by deploy），或讓 `hitl-run` 的參數核對 FAIL（`not_default`）；工具裡沒有把它們改回來的動作。2026-10-20 在 Cube Orange+ 上的做法：
 
-1. 完整讀回並存檔，QGC 可以載回（`param-readback`；例：[deploy/00_native_cubeorangeplus/fc_params_20261020.params](../deploy/00_native_cubeorangeplus/fc_params_20261020.params)）。
+1. 完整讀回並存檔，QGC 可以載回（`param-readback`；例：[deploy/00_native_cubeorangeplus/fc_params_20261020.params](../../deploy/00_native_cubeorangeplus/fc_params_20261020.params)）。
 2. 燒錄配方的韌體（`./runbridge flash --release deploy/<配方>`），讓身分對上（參數部署會先核對身分）。
 3. 在 cache 做一份一次性的配方：正式配方，加上把殘留的名字放進 `set`（機身值改回機架腳本的值、其他改回韌體預設值；放進 `set` 的機身名字要從 `airframe` 拿掉），用 `./runbridge param-deploy --release <那份配方>` 寫入：同樣有交易、讀回與失敗回復。
 4. `./runbridge param-plan --release deploy/<配方>` 要 0 個寫入、核對 PASS，再照常 `deploy-test --flash`。
@@ -52,5 +52,5 @@ CubePilot 的板子出廠多半是 ArduPilot（韌體與 bootloader）。這次�
 
 | 飛控 | 配方 | 韌體編譯 | 一條龍（`deploy-test --flash`＋`hitl-run`） | 細節 |
 |---|---|---|---|---|
-| Pixhawk 6C（`px4_fmu-v6c_default`） | `00_native`、`01_sdfix`、`02_template` | PASS（2026-10-18） | PASS（2026-10-18；02 的範本判定 FAIL：高度衝過頭，見根目錄 README） | [deploy/00_native](../deploy/00_native/README.md) |
+| Pixhawk 6C（`px4_fmu-v6c_default`） | `00_native`、`01_sdfix`、`02_template` | PASS（2026-10-18） | PASS（2026-10-18；02 的範本判定 FAIL：高度衝過頭，見根目錄 README） | [deploy/00_native](../../deploy/00_native/README.md) |
 | Cube Orange+（`cubepilot_cubeorangeplus_hil`） | `00_native_cubeorangeplus`、`01_sdfix_cubeorangeplus`、`02_template_cubeorangeplus` | PASS（2026-10-20） | PASS（2026-10-20，三個配方；02 的範本判定 PASS，但高度基準和 6C 不同，見細節） | [cubeorangeplus.md](cubeorangeplus.md) |

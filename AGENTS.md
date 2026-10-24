@@ -20,7 +20,7 @@ AI 先查好現況、提出建議，只跟人確認**目標、選擇與成功條
 3. **1.2 算法、部署與驗收**：
    - **先讀鎖定版本的 PX4 原始碼，再和使用者討論接法**：依使用者要開發的東西，整理 PX4 現在的控制鏈（固定翼大致是：導引／模式管理 → 高度與速度 → 姿態 → 角速度 → 控制分配）、模式與相關模組，找出這次可行的方案；每個方案用白話說明要不要改 PX4 原始碼、能不能切回原生、失效保護誰負責、Flash 空間、SITL 要模擬哪些部分。可能的例子：OFFBOARD（交出去幾層由旗標決定，模組也能在韌體內自己發 OFFBOARD 訊號，不一定要外接任務電腦）、用專案的 patch 機制修改或拿掉原生模組、PX4 的外部模式。**這些只是例子，不是只有這幾種**；方案由使用者選，AI 依原始碼查證可行後才開始。`modules/src/guidance_template` 是其中一種接法的範例，只用來讓人有概念；
    - 預想 SITL 與 HITL 會碰到的問題：SITL 用真值、不經 EKF；HITL 編進客製韌體、用 FC 上 EKF 的估測；和現有飛行模式怎麼共存；Flash 空間（原生韌體已用約 98 %）；HITL 沒有實體遙控器，PX4 的「遙控」是自動飛手送的搖桿，一停就觸發遙控斷訊保護（SITL 沒有 Commander，驗不到），所以新算法從哪個模式進、結束在哪個模式，要和飛手的規則對得上（[autotakeoff README](hitl/autotakeoff/README.md)）；
-   - 談好：用哪塊飛控、HITL 是否已設好；新算法何時接手、怎麼退出、失效時怎麼回到原生；用什麼動作證明它真的有作用。**不是已有配方的飛控**（目前有 Pixhawk 6C 與 Cube Orange+）時，先照 [fc README](fc/README.md) 的清單查：預設韌體有沒有 HITL 要的 `pwm_out_sim`（Cube Orange+ 就沒有）、FC 回報的板子身分、bootloader 的 USB 名稱、開機腳本設的參數、flash 餘裕；查完再建這塊飛控的配方；
+   - 談好：用哪塊飛控、HITL 是否已設好；新算法何時接手、怎麼退出、失效時怎麼回到原生；用什麼動作證明它真的有作用。**不是已有配方的飛控**（目前有 Pixhawk 6C 與 Cube Orange+）時，先照 [fc README](docs/fc/README.md) 的清單查：預設韌體有沒有 HITL 要的 `pwm_out_sim`（Cube Orange+ 就沒有）、FC 回報的板子身分、bootloader 的 USB 名稱、開機腳本設的參數、flash 餘裕；查完再建這塊飛控的配方；
    - **「怎麼部署」是第 3 段一條龍的前提**；
    - 寫成模組 README 的一頁規格：目標、接法、SITL 與 HITL 各自的驗收指標。兩邊估測來源不同，比的是表現與差距，不要求逐點相同。
    - **每一項要求兩邊都要量**，沒量到就寫「沒測」，不能當通過。判通過／不通過只用**事先和人講好的規則**；沒講好的只把 SITL 與 HITL 的數字並排列出差異，由人判斷，AI 不自己訂門檻、不評價。總結分開寫「流程跑完」和「各項要求」，不要用一個 PASS 代表全部。比較時寫明 SITL 是真值、HITL 是 FC 的 EKF 估測，以及兩邊的取樣時間。比對程式先核對一個不靠比對本身的量（例如開局那一刻兩邊的位置相同、自己算的結束距離等於系統回報的），輸入一律從紀錄拿，不用「應該送了什麼」；對不上就寫在報告最上面，不要只輸出數字。
@@ -50,10 +50,10 @@ AI 先查好現況、提出建議，只跟人確認**目標、選擇與成功條
 
 ## 2. 接手時先查平台
 
-- 完整流程只在 Ubuntu 24.04 x86-64 驗證過；各平台驗證到哪一段見 README「驗證矩陣」，macOS 的平台差異見 [platforms/macos.md](platforms/macos.md)。換平台時，照 README「環境準備」逐項查官方文件，確認做法再裝；遇到和文件不同的現象，先查證、留證據，再提議更新對應的平台文件。
+- 完整流程只在 Ubuntu 24.04 x86-64 驗證過；各平台驗證到哪一段見 README「驗證矩陣」，macOS 的平台差異見 [platforms/macos.md](docs/platforms/macos.md)。換平台時，照 README「環境準備」逐項查官方文件，確認做法再裝；遇到和文件不同的現象，先查證、留證據，再提議更新對應的平台文件。
 - 路徑與工具不寫死：MATLAB、編譯器、暫存位置見 `plant/core/toolchain.py`（可用環境變數指定），PX4 原始碼樹見 `px4/check_px4_tree.py`；這台機器實際的位置用 `./runbridge where` 查，文件與指令不寫死某個平台的資料夾。
 - 檢查：`./runbridge --check-python`、`python3 px4/check_px4_tree.py`、`./runbridge preflight`。
-- **接上一塊這套流程沒用過的 FC**（例如在 QGC 或 ArduPilot 用過）：先完整讀回存檔，FC 上的殘留設定與 SD 卡內容照 [fc README](fc/README.md)「接手一塊用過的飛控」處理；`param-deploy` 只寫 `set`，殘留值會讓部署被擋或核對 FAIL。改 FC 上不屬於配方的值、刪 SD 卡上的檔案，都先問人。
+- **接上一塊這套流程沒用過的 FC**（例如在 QGC 或 ArduPilot 用過）：先完整讀回存檔，FC 上的殘留設定與 SD 卡內容照 [fc README](docs/fc/README.md)「接手一塊用過的飛控」處理；`param-deploy` 只寫 `set`，殘留值會讓部署被擋或核對 FAIL。改 FC 上不屬於配方的值、刪 SD 卡上的檔案，都先問人。
 - **人說「我給你權限」，這個專案底下就是綠燈**：每一種動作（刷機、起飛、改參數、跑負載等）第一次做之前問一次，之後同一種動作先告知再做，不等回答。哪些已經確認過，記在 AI 自己的記憶或筆記（那是這台機器、這個人的事，不寫進專案）。下面三種每次都要等人回答：
   1. 收不回來或對外的：merge、刪檔、改系統設定（要 sudo 的）。推到 GitHub 的 PR 分支只告知。
   2. 新的或不正常的：新編的韌體或新算法第一次上 FC、失敗後要重試、runtime 的安全檢查擋下（照第 1 節停下來說明）。
@@ -115,13 +115,13 @@ for f in hitl/tests/test_*.py deploy/test_*.py; do n=$(basename "$f" .py); if "$
 |---|---|
 | `model/` | 飛機模型來源；`generated/` 是轉好的 C 與 Simulink 參考結果 |
 | `images/` | README 用的圖（`overview.svg`）與嵌字工具 `embed_fonts.py` |
-| `platforms/` | 各平台的理解（目前是 `macos.md`）：和 Ubuntu 不同的平台行為、怎麼確認；不是安裝腳本 |
-| `fc/` | 各飛控的理解（目前是 `cubeorangeplus.md`）：換一塊飛控要查的事、接手用過的飛控、和 6C 不同的地方；不是安裝腳本 |
+| `docs/platforms/` | 各平台的理解（目前是 `macos.md`）：和 Ubuntu 不同的平台行為、怎麼確認；不是安裝腳本 |
+| `docs/fc/` | 各飛控的理解（目前是 `cubeorangeplus.md`）：換一塊飛控要查的事、接手用過的飛控、和 6C 不同的地方；不是安裝腳本 |
 | `aircraft/` | 飛機的氣動來源：`avl/` 是產生氣動表的 AVL 幾何、質量檔與轉表程式（不在 `model/` 裡，改它不影響模型版本） |
 | `plant/` | plant 核心包裝、C 真值、C 感測器、各自的檢查程式、錄製的參考資料 |
 | `sitl/` | 精簡 PX4 的 plant 模組 `plant_sim`、情境、配平、ULog 重播 |
 | `modules/` | 自己的 PX4 模組（同一份原始碼編進 SITL 與韌體；`guidance_template` 是範例，見它的 README「照著做一個自己的模組」）。韌體只編配方 `recipe.modules` 列的模組；SITL 要在 `sitl/px4_external/src/` 加包裝並列進那裡的 `CMakeLists.txt` |
 | `hitl/` | runtime（owner、worker、`hitl-run`）、起飛與起飛後動作腳本、`flight_test.json`（預設飛行與判定）、模型 release |
-| `deploy/` | 部署配方，每塊飛控一組：Pixhawk 6C 是 `00_native`（原生韌體＋參數，可隨時刷回）、`01_sdfix`（原生＋記憶卡修正 patch）、`02_template`（01＋範例模組 `guidance_template`＋開機檔＋`hitl.json` 指定的起飛後動作與判定）；Cube Orange+ 是同樣三層的 `*_cubeorangeplus`（`hil` 板子變體，見 `fc/`）；自建配方的 `firmware/firmware.json` 的 `recipe` 寫要套的 patch 與 `modules/` 的模組，`px4/build_firmware.py` 在 PX4 原始碼樹旁的建置樹編譯（原樹不動），patch 以固定作者與日期 commit，FC 回報的 NuttX hash 因此可預期、可核對 |
+| `deploy/` | 部署配方，每塊飛控一組：Pixhawk 6C 是 `00_native`（原生韌體＋參數，可隨時刷回）、`01_sdfix`（原生＋記憶卡修正 patch）、`02_template`（01＋範例模組 `guidance_template`＋開機檔＋`hitl.json` 指定的起飛後動作與判定）；Cube Orange+ 是同樣三層的 `*_cubeorangeplus`（`hil` 板子變體，見 `docs/fc/`）；自建配方的 `firmware/firmware.json` 的 `recipe` 寫要套的 patch 與 `modules/` 的模組，`px4/build_firmware.py` 在 PX4 原始碼樹旁的建置樹編譯（原樹不動），patch 以固定作者與日期 commit，FC 回報的 NuttX hash 因此可預期、可核對 |
 | `px4/` | PX4 版本鎖、原始碼樹核對、修正 patch |
 | `analysis/` | 響應指標、ULog 讀檔與嚴格解析、重播比對 |

@@ -140,4 +140,4 @@ PX4 模組（Stabilized）：sensors、pwm_out_sim、control_allocator、fw_rate
 
 ## 原生 AUTO 任務預演
 
-`carrier_native_circuit.json` 新增 `mission` 模式：原生 dataman、Navigator、fw_mode_manager 及固定翼控制器，mission_item 透過 PX4 DatamanClient 載入；保留真值與 Commander stub，不能由此推論實體解鎖、EKF 或 land detector 通過。100 s（釋放後 40 s）切 AUTO，航點來源／暫時參數／720 s 的五邊、盤旋與接地結果見 [missions README](../missions/README.md)。請用獨立 build suffix `_circuit_trial`，不要覆蓋其他同時使用的 SITL。
+`carrier_native_circuit.json` 新增 `mission` 模式：原生 dataman、Navigator、fw_mode_manager 及固定翼控制器，mission_item 透過 PX4 DatamanClient 載入；保留真值與 Commander stub，不能由此推論實體解鎖、EKF 或 land detector 通過。100 s（釋放後 40 s）切 AUTO，航點來源／暫時參數／720 s 的五邊、盤旋與接地結果見 [missions README](../docs/missions/README.md)。請用獨立 build suffix `_circuit_trial`，不要覆蓋其他同時使用的 SITL。

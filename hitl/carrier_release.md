@@ -61,4 +61,4 @@
 
 離線發布六項檢查全部 PASS，含新增十秒定速差壓卡值回歸與固定種子重現。SITL 對照使用此修正前的相同動力學：最低高度約 82.05 m、俯仰 -6.64° 至 +3.26°；SITL 為真值，HITL 為 EKF，未訂定差異驗收門檻，不能由這組數字宣稱兩者等效。
 
-第二階段的原生 AUTO 五邊與盤旋降落已完成 SITL 預演，尚未上 Cube；它是另一個 `carrier-circuit-run` 指令，詳見 [missions README](../missions/README.md)。此處第一階段的 40 s 觀察結果與範圍維持不變。
+第二階段的原生 AUTO 五邊與盤旋降落已完成 SITL 預演，尚未上 Cube；它是另一個 `carrier-circuit-run` 指令，詳見 [missions README](../docs/missions/README.md)。此處第一階段的 40 s 觀察結果與範圍維持不變。

@@ -42,4 +42,4 @@ runner 沿用航點備份／上傳讀回／還原、參數交易、標準 recove
 
 新FC log358（測前最新357）雙下載相同，嚴格解析通過；任務與參數還原、標準recover全通過，時序零漏拍，無非預期參數變化。最終armed=false、SYS_HITL=1、無pending；bridge仍開啟、模型未運行。
 
-結果及原始未啟動證據在 results/20261022-orbit-no-range/；本工作區 outputs/orbit-no-range-validation/report.md 是完整比較報告，outputs/orbit-no-range-hitl-20261022-01/ 是本次硬體原始證據。SITL用真值與接地stub；HITL用FC EKF與原生落地偵測，兩者取樣間隔分別約4ms及100ms。只能確認本次模擬流程完成，著陸品質未評定。
+結果及原始未啟動證據在 ../../experiments/20261022-orbit-no-range/；本工作區 outputs/orbit-no-range-validation/report.md 是完整比較報告，outputs/orbit-no-range-hitl-20261022-01/ 是本次硬體原始證據。SITL用真值與接地stub；HITL用FC EKF與原生落地偵測，兩者取樣間隔分別約4ms及100ms。只能確認本次模擬流程完成，著陸品質未評定。

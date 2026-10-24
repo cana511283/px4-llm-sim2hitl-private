@@ -1,5 +1,7 @@
 # px4-llm-sim2hitl
 
+[技術文件](docs/README.md) · [實驗紀錄](experiments/README.md) · 分析工具保留於 `analysis/`。
+
 **繁體中文** | [English](README.en.md)
 
 （英文版是翻譯；兩者不一致時以本中文版為準）
@@ -10,7 +12,7 @@
 
 **範例飛機是 SkySurfer**（固定翼）：`model/`、`hitl/aircraft/skysurfer/`、模型版本名 `skysurfer-…` 與 `SkySurfer_Core` 這些是飛機本身。套件叫 `px4-llm-sim2hitl`：資料夾用全名（Linux 是 `~/.cache/px4-llm-sim2hitl`、`~/.local/share/px4-llm-sim2hitl/venv`、`~/.config/px4-llm-sim2hitl`；這台機器實際的位置用 `./runbridge where` 查），環境變數用短名 `SIM2HITL_*`（環境變數不能有減號）。換成自己的飛機見第 1.1 段。
 
-> 狀態：從舊的 macOS 專案搬到 Ubuntu 已完成，整套流程跑通（見最後一節）。2026-10-20 換到第二塊飛控 Cube Orange+ 也走完一輪；換飛控要查的事見 [fc/](fc/README.md)。
+> 狀態：從舊的 macOS 專案搬到 Ubuntu 已完成，整套流程跑通（見最後一節）。2026-10-20 換到第二塊飛控 Cube Orange+ 也走完一輪；換飛控要查的事見 [fc/](docs/fc/README.md)。
 
 ## 怎麼開始
 
@@ -18,7 +20,7 @@
 
 - **只想了解**：任何能讀網頁的 AI 都可以，問它「這是什麼、能幫我做什麼」。
 - **要動手開發**：用能在你電腦上執行指令的 AI（例如 Claude Code、Codex），一樣貼網址，請它下載到你電腦上一個固定的資料夾（之後不要搬；要搬先照 AGENTS 恢復）。
-  - 第一次：說「照 README 的環境準備，幫我把這台電腦設好」。它會一項一項查，要 sudo 或權限時請你貼一次。**完整流程只在 Ubuntu 24.04（x86-64）驗證過**；macOS（Apple Silicon）驗證到 SITL（見「驗證矩陣」與 [platforms/macos.md](platforms/macos.md)）；其他系統沒測過，AI 會照官方文件試，但可能要多花時間踩坑。
+  - 第一次：說「照 README 的環境準備，幫我把這台電腦設好」。它會一項一項查，要 sudo 或權限時請你貼一次。**完整流程只在 Ubuntu 24.04（x86-64）驗證過**；macOS（Apple Silicon）驗證到 SITL（見「驗證矩陣」與 [platforms/macos.md](docs/platforms/macos.md)）；其他系統沒測過，AI 會照官方文件試，但可能要多花時間踩坑。
   - 之後：直接說你想做什麼，例如「我想換成我的飛機」「我想做一個新的導引算法」。它會從第 1 段「需求與規格」開始跟你談。
 - **AI 要夠力**：要能讀完很長的文件、自己寫程式、自己跑指令並看懂結果。模型太小或推理開太低，容易跳過文件自己猜。測試過可以用：GPT-6.1 sol（推理 medium）。
 
@@ -54,7 +56,7 @@
 
 ## 環境準備（第一次）
 
-完整流程只在 **Ubuntu 24.04 x86-64** 驗證過（各平台驗證到哪一段見「驗證矩陣」；macOS 的平台差異見 [platforms/macos.md](platforms/macos.md)）。下面每一項都寫了「為什麼要」與「驗證機（Ubuntu）的做法」；做法只是例子，換平台或版本時，**請 AI 先查該項的官方文件**確認正確做法再裝。
+完整流程只在 **Ubuntu 24.04 x86-64** 驗證過（各平台驗證到哪一段見「驗證矩陣」；macOS 的平台差異見 [platforms/macos.md](docs/platforms/macos.md)）。下面每一項都寫了「為什麼要」與「驗證機（Ubuntu）的做法」；做法只是例子，換平台或版本時，**請 AI 先查該項的官方文件**確認正確做法再裝。
 
 | 項目 | 為什麼要 | Ubuntu 24.04 的做法（例子） | 怎麼確認 |
 |---|---|---|---|
@@ -108,7 +110,7 @@
 | 韌體編譯 | PASS（2026-10-18，6C；2026-10-20，Cube Orange+） | 沒測 |
 | 實機迴路（HITL） | PASS（2026-10-18，6C；2026-10-20 6C 沒有即時權限、機器忙時時序 FAIL，見下表；2026-10-20 Cube Orange+ 三個配方 PASS，沒有即時權限、機器閒置） | 沒測 |
 
-飛控（Pixhawk 6C、Cube Orange+）各驗證到哪裡，見 [fc README](fc/README.md)「驗證過的飛控」。
+飛控（Pixhawk 6C、Cube Orange+）各驗證到哪裡，見 [fc README](docs/fc/README.md)「驗證過的飛控」。
 
 ## 驗證紀錄（2026-10-18，Ubuntu 24.04）
 
@@ -130,6 +132,6 @@
 | 可攜產碼（2026-10-20） | 產碼關掉指令集擴充（MATLAB 對 Intel 預設用 SSE2，arm64 編不過；每一格其實就是一般的雙精度運算）。Simulink 參考結果逐位元相同；新 release `skysurfer-75a7ddff…` 四道檢查 PASS，核心與 C 真值對參考資料的每個誤差都和上一版一位不差；配平與 20 s 放手每一位相同；SITL 參考情境與範本和之前相同。HITL（`01_sdfix`，沒有即時權限）`hitl-run`：盤旋 60.1 s、2.78 圈、半徑 82 m，身分、參數前後、飛控紀錄、資料 PASS；時序 FAIL（23,297 步裡 11 步晚到，最慢 16 ms；當時 P 核心被別的計算佔滿） |
 | HITL 換模式（2026-10-20，FC 是 `01_sdfix`） | 驗證「飛起來以後 PX4 換模式，飛手不放手」：進 Hold 後從 QGC 那條路依序要求 Stabilized、Hold、Position、Hold，各約 30 s。飛控紀錄：模式照要求換，期間沒有 failsafe、沒有遙控斷訊、沒有 RTL；飛手在 Stabilized 平飛定高，其他模式送中立搖桿。紀錄是這趟的、沒有改參數、恢復完成 |
 | 第二台 Ubuntu、沒有 MATLAB（2026-10-20） | 新裝的 Ubuntu 24.04.5 筆電（18 執行緒，沒有 MATLAB、沒有即時排程權限）。uv＋venv；PX4 原樹被別的工作改過，另複製一份乾淨的 v1.17.0；PX4 的 Python 另建 venv 放 PATH。`update-model` 原本因找不到 MATLAB 停下（生成碼要 `rtw_solver.h`、`rtw_continuous.h`），改用專案的最小標頭檔（`plant/core/rtw/`）後四道檢查 PASS（`skysurfer-3cbb58ff…`），60 秒節拍 0 次晚到；對錄製參考資料最大誤差 6.2e-15（靜止時的攻角除外），和用 MATLAB 標頭檔的版本相同。SITL 參考情境的指標和紀錄差 ≤ 1 步（4 ms）／0.005°，範本 PASS；離線測試 15 個檔全過 |
-| 換飛控：Cube Orange+（2026-10-20，同一台筆電） | 三個配方（`*_cubeorangeplus`）一條龍全 PASS，交接時 FC 上是 `01_sdfix_cubeorangeplus`。原生：盤旋 60.16 s、2.78 圈、半徑 82.2 m、高度 99.8–113.2 m（6C 基準 60.06 s、2.78 圈、82.3 m、100.0–113.2 m），23,079 步 0 次晚到、最慢 0.35 ms（沒有即時權限、機器閒置）。範本：FC 接受模組自己發的 OFFBOARD；航向 +29.15°、高度 +9.39 m、超越 18 %，判定 PASS，但這張 SD 卡的記錄清單沒有 `tecs_status`，高度基準是實測高度（6C 用 TECS 目標），不能直接比。和 6C 不同而要改的：預設韌體沒有 `pwm_out_sim`（改用 `hil` 板子變體 patch）、FC 回報的 board_version 是 USB 產品碼 4184（不是 board id 1063）、出廠 ArduPilot bootloader 的 USB 名稱 `CubeOrange+-BL` 原本認不出來、用過的 FC 有 16 個殘留參數（以一次性配方改回）。細節見 [fc/cubeorangeplus.md](fc/cubeorangeplus.md) |
+| 換飛控：Cube Orange+（2026-10-20，同一台筆電） | 三個配方（`*_cubeorangeplus`）一條龍全 PASS，交接時 FC 上是 `01_sdfix_cubeorangeplus`。原生：盤旋 60.16 s、2.78 圈、半徑 82.2 m、高度 99.8–113.2 m（6C 基準 60.06 s、2.78 圈、82.3 m、100.0–113.2 m），23,079 步 0 次晚到、最慢 0.35 ms（沒有即時權限、機器閒置）。範本：FC 接受模組自己發的 OFFBOARD；航向 +29.15°、高度 +9.39 m、超越 18 %，判定 PASS，但這張 SD 卡的記錄清單沒有 `tecs_status`，高度基準是實測高度（6C 用 TECS 目標），不能直接比。和 6C 不同而要改的：預設韌體沒有 `pwm_out_sim`（改用 `hil` 板子變體 patch）、FC 回報的 board_version 是 USB 產品碼 4184（不是 board id 1063）、出廠 ArduPilot bootloader 的 USB 名稱 `CubeOrange+-BL` 原本認不出來、用過的 FC 有 16 個殘留參數（以一次性配方改回）。細節見 [fc/cubeorangeplus.md](docs/fc/cubeorangeplus.md) |
 | 乾淨目錄試跑 | 2026-10-18（改名後）：從 git 拉到新資料夾、獨立快取、不連 MATLAB：`update-model` 建出**相同的 build-id** `skysurfer-6d1cf7a3…`、四道檢查 PASS；離線測試全過；**從零重編 `01_sdfix`**：PX4 `d6f12ad1…`、NuttX `8d3ed2a2…`、韌體大小都和 FC 上的相同（`.px4` 含建置時間，所以檔案 SHA 不同）；紀錄裡沒有本機路徑 |
 | 收尾 | 核心精神已寫進本 README（「這套專案的精神」）；乾淨目錄試跑完成；上 GitHub：https://github.com/rhyne1012/px4-llm-sim2hitl（2026-10-18） |

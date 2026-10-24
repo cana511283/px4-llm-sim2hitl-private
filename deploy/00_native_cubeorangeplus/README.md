@@ -1,6 +1,6 @@
 # 00_native_cubeorangeplus：Cube Orange+ 的原生 PX4 基準
 
-CubePilot Cube Orange+ 的三個配方之一（和 6C 的 `00_native`、`01_sdfix`、`02_template` 對應）。飛控差異與這次的經驗見 [fc/cubeorangeplus.md](../../fc/cubeorangeplus.md)。
+CubePilot Cube Orange+ 的三個配方之一（和 6C 的 `00_native`、`01_sdfix`、`02_template` 對應）。飛控差異與這次的經驗見 [fc/cubeorangeplus.md](../../docs/fc/cubeorangeplus.md)。
 
 | 配方 | 韌體 | 和 6C 的對應 |
 |---|---|---|
@@ -26,7 +26,7 @@ CubePilot Cube Orange+ 的三個配方之一（和 6C 的 `00_native`、`01_sdfi
 | `fc_owned` | 6C 的 11 條規則，加 `^MAN_ARM_GESTURE$`（遙控器設了解鎖開關時 PX4 每次開機改成 0）；解析出 500 個名字 |
 
 - 狀態是 AI 起草（`status.state = draft`）：使用者要求這輪不中斷跑完，值照 6C 的 HITL 設定與 Cube 的開機腳本；**待使用者確認**。
-- [fc_params_20261020.params](fc_params_20261020.params)：接手前 FC 的完整讀回（QGC 格式，可在 QGC 載回），原樣保存；SHA-256 `1af2f6d6d2bf800d0f9c585786140abcd4560a981f2b8ee307adf45d0f74e44f`。那時 FC 是實機的設定：3 個舵面（`CA_SV_CS_COUNT=3`）、HIL 通道 201、202、203、101、遙控模式槽、`EKF2_ABL_LIM=0`。接手時改回配方的值，做法見 [fc README](../../fc/README.md)「接手一塊用過的飛控」。
+- [fc_params_20261020.params](fc_params_20261020.params)：接手前 FC 的完整讀回（QGC 格式，可在 QGC 載回），原樣保存；SHA-256 `1af2f6d6d2bf800d0f9c585786140abcd4560a981f2b8ee307adf45d0f74e44f`。那時 FC 是實機的設定：3 個舵面（`CA_SV_CS_COUNT=3`）、HIL 通道 201、202、203、101、遙控模式槽、`EKF2_ABL_LIM=0`。接手時改回配方的值，做法見 [fc README](../../docs/fc/README.md)「接手一塊用過的飛控」。
 
 ## 紀錄
 

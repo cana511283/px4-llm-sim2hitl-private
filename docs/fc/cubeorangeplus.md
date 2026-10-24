@@ -10,9 +10,9 @@
 
 | 步驟 | 結果 |
 |---|---|
-| FC 原本的狀態 | 本機自建的 PX4 v1.17.0 `hil` 變體（`ver all`：`Build uri: localhost`、`Build variant: hil`，2026-07-26）；`SYS_HITL=1`、機架 2100，但機身改成 3 個舵面（`CA_SV_CS_COUNT=3`，單副翼＋升降舵＋方向舵）、HIL 通道 201／202／203／101；SD 卡有實機用的記錄清單與 9/27–10/15 的飛行記錄。原參數存在 [deploy/00_native_cubeorangeplus/fc_params_20261020.params](../deploy/00_native_cubeorangeplus/fc_params_20261020.params) |
+| FC 原本的狀態 | 本機自建的 PX4 v1.17.0 `hil` 變體（`ver all`：`Build uri: localhost`、`Build variant: hil`，2026-07-26）；`SYS_HITL=1`、機架 2100，但機身改成 3 個舵面（`CA_SV_CS_COUNT=3`，單副翼＋升降舵＋方向舵）、HIL 通道 201／202／203／101；SD 卡有實機用的記錄清單與 9/27–10/15 的飛行記錄。原參數存在 [deploy/00_native_cubeorangeplus/fc_params_20261020.params](../../deploy/00_native_cubeorangeplus/fc_params_20261020.params) |
 | 預設韌體（`cubepilot_cubeorangeplus_default`） | 編譯 PASS（98.10 %），但沒有 `pwm_out_sim`、參數名單沒有 `HIL_ACT_*`：不能用 |
-| `hil` 變體（[patch](../px4/patches/px4_cubeorangeplus_hil_variant_pwm_out_sim.patch)） | 三個配方編譯 PASS：原生 98.46 %、＋記憶卡修正 98.46 %、＋範本模組 98.58 %（上限 1,966,080 bytes）；參數 1,979 個（＝預設 1,962＋17 個 `HIL_ACT_*`）；PX4 hash `c45268d056`（patch commit，可重現）、NuttX 原生 `fb2fadf6…`／修正版 `8d3ed2a2…`；每次約 100–180 s |
+| `hil` 變體（[patch](../../px4/patches/px4_cubeorangeplus_hil_variant_pwm_out_sim.patch)） | 三個配方編譯 PASS：原生 98.46 %、＋記憶卡修正 98.46 %、＋範本模組 98.58 %（上限 1,966,080 bytes）；參數 1,979 個（＝預設 1,962＋17 個 `HIL_ACT_*`）；PX4 hash `c45268d056`（patch commit，可重現）、NuttX 原生 `fb2fadf6…`／修正版 `8d3ed2a2…`；每次約 100–180 s |
 | 燒錄 | `px_uploader.py` 經出廠的 ArduPilot bootloader，第一次就成功，約 30 s；序列埠一直是 `/dev/ttyACM0` |
 | 身分 | 修正後 PASS：FC 回報 board_version 4184、PX4 與 NuttX hash 都等於配方 |
 | 接手 | FC 上 16 個值和配方不同（機身 5 個、HIL 通道與記錄 4 個、遙控模式槽與 EKF 等 7 個）；第一次部署因 `MAN_ARM_GESTURE` 被 PX4 改回 0 而 FAIL、自動回復；查明原因後第二次 PASS（15 個寫入，重開後讀回正確） |
@@ -30,7 +30,7 @@
 
 - v1.17.0 的 `boards/cubepilot/cubeorangeplus/default.px4board` 沒有任何模擬模組：`pwm_out_sim` 沒編進去。6C 的 board 開了 `SIMULATOR_SIH`，順帶選了 `pwm_out_sim`。
 - 影響：`SYS_HITL=1` 開機時 rcS 的 `pwm_out_sim start -m hil` 失敗，沒有 HIL 輸出，參數名單也沒有 `HIL_ACT_*`。
-- 做法：[px4/patches/px4_cubeorangeplus_hil_variant_pwm_out_sim.patch](../px4/patches/px4_cubeorangeplus_hil_variant_pwm_out_sim.patch) 加一個 `hil.px4board`（只有 `CONFIG_MODULES_SIMULATION_PWM_OUT_SIM=y`），make 目標 `cubepilot_cubeorangeplus_hil`。PX4 的控制程式不變；多 7 KB。
+- 做法：[px4/patches/px4_cubeorangeplus_hil_variant_pwm_out_sim.patch](../../px4/patches/px4_cubeorangeplus_hil_variant_pwm_out_sim.patch) 加一個 `hil.px4board`（只有 `CONFIG_MODULES_SIMULATION_PWM_OUT_SIM=y`），make 目標 `cubepilot_cubeorangeplus_hil`。PX4 的控制程式不變；多 7 KB。
 - 確認：建置目錄的 `boardconfig` 有 `CONFIG_MODULES_SIMULATION_PWM_OUT_SIM=y`；FC 上 `pwm_out_sim status` 有 `Param prefix: HIL_ACT`；`ver all` 是 `Build variant: hil`。
 - 例：FC 原本跑的就是使用者自己編的 `hil` 變體，所以一開始讀回時 FC 有 `HIL_ACT_*`、用預設目標編出來的參數名單卻沒有，讀回判 INCOMPLETE（17 個 `not_in_list`）。
 

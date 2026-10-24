@@ -60,7 +60,7 @@ Cube Orange+ 實際完成地面正常解鎖、100 m／30 節母機釋放、40 s 
 
 標準 recover、航點還原及兩項暫時參數還原均 PASS。飛控解除解鎖時自動將 ASPD_SCALE_1 由 1.0 微調成 1.0000187158584595，導致自動證據收集最後參數核對失敗；另行交易還原至 1.0 並讀回 PASS。最終未解鎖、SYS_HITL=1、無待恢復或參數交易。飛控自行更新的校正與飛行計數另記錄，不偽裝為完全逐位元相同。
 
-飛控新 log 356（測試前最新 355）手動下載兩次 SHA-256 相同：`880ee3713b7ea5cd830da1778213e684df2f50dcb537f11e07e37bc987d26af5`，嚴格解析 PASS；時序 misses=0。原始失敗結果保留，本次摘要、清理核對與軌跡圖存於本資料夾 `results/20261021-cube-circuit/`；完整 wire、ULog、參數備份保留於工作區 outputs/carrier-circuit-hitl-20261021-03。
+飛控新 log 356（測試前最新 355）手動下載兩次 SHA-256 相同：`880ee3713b7ea5cd830da1778213e684df2f50dcb537f11e07e37bc987d26af5`，嚴格解析 PASS；時序 misses=0。原始失敗結果保留，本次摘要、清理核對與軌跡圖存於`../../experiments/20261021-cube-circuit/`；完整 wire、ULog、參數備份保留於工作區 outputs/carrier-circuit-hitl-20261021-03。
 
 ### 平面測距 HIL：完成降落流程（2026-10-22）
 
@@ -70,4 +70,4 @@ Cube 初次 preflight 因 stale heartbeat／serial errors 尚未啟動；人重�
 
 ULog 中 distance_sensor 有497筆（記錄率不等於25 Hz傳送率）；local position 4968筆中4875筆 dist_bottom_valid，最後進場632筆中604筆有效，沒有 terrain_not_found 事件。FC 約解鎖後496.73 s判定落地，當時 EKF 水平速度約0.55 m/s。高度相對EKF原點約-0.67 m，不可當成模型穿地深度；EKF原點與實際平面有偏差。最後速度約0.47 m/s。時序misses=0。尚未事先訂飛行品質門檻，不能據此宣稱實機安全著陸。
 
-標準recover、任務還原及暫時參數還原 PASS。ASPD_SCALE_1解除解鎖後自動由1.0改為1.0000311136245728，造成原自動證據收集最後check FAIL；另建交易還原至1.0並讀回PASS。原result.json不覆寫，補充證據見本資料夾 `results/20261022-flat-range-circuit/`。最終armed=false、SYS_HITL=1、無pending；其餘差異皆為配方列為FC-owned的校正／飛行計數。此結果支持「本次缺少地形量測導致中止」診斷，不證明未取得日誌的舊案例原因，也不是海拔／相對高度的對照試驗。
+標準recover、任務還原及暫時參數還原 PASS。ASPD_SCALE_1解除解鎖後自動由1.0改為1.0000311136245728，造成原自動證據收集最後check FAIL；另建交易還原至1.0並讀回PASS。原result.json不覆寫，補充證據見`../../experiments/20261022-flat-range-circuit/`。最終armed=false、SYS_HITL=1、無pending；其餘差異皆為配方列為FC-owned的校正／飛行計數。此結果支持「本次缺少地形量測導致中止」診斷，不證明未取得日誌的舊案例原因，也不是海拔／相對高度的對照試驗。

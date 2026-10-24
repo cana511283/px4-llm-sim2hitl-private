@@ -7,7 +7,7 @@ PX4 原始碼樹很大，**不放在專案裡**，放在專案外。本資料夾
 | [px4_lock.json](px4_lock.json) | 版本鎖：repository、tag、commit、FC 韌體說明、本機位置設定檔在哪 |
 | [check_px4_tree.py](check_px4_tree.py) | 核對這台機器的原始碼樹是否等於版本鎖（commit、沒有修改、submodule）；其他程式也用它找原始碼樹 |
 | [build_firmware.py](build_firmware.py) | 編部署配方的 FC 韌體（`./runbridge build-firmware --release deploy/<配方>` 呼叫它） |
-| [patches/](patches/) | 套在 PX4 上的修正：NuttX 的記憶卡讀取修正（原因見 [AGENTS](../AGENTS.md) 第 1 段）；Cube Orange+ 的 `hil` 板子變體（預設韌體沒有 HITL 要的 `pwm_out_sim`，見 [fc/cubeorangeplus.md](../fc/cubeorangeplus.md)） |
+| [patches/](patches/) | 套在 PX4 上的修正：NuttX 的記憶卡讀取修正（原因見 [AGENTS](../AGENTS.md) 第 1 段）；Cube Orange+ 的 `hil` 板子變體（預設韌體沒有 HITL 要的 `pwm_out_sim`，見 [fc/cubeorangeplus.md](../docs/fc/cubeorangeplus.md)） |
 
 目前鎖定 **v1.17.0**（commit `d6f12ad1c4f70ad3230afd7d86e971421e02fef4`）。SITL、FC 韌體與 HITL 都用這一個版本。
 
