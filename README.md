@@ -1,5 +1,7 @@
 # SkySurfer / Cube Orange+ 專案備份
 
+[檔案分類與維護規則](docs/ORGANIZATION.md)：後續更新均依此執行。
+
 本分支保存歷史實驗與證據；可接續開發的程式在 [carrier-orbit-no-range-20261022](https://github.com/cana511283/px4-llm-sim2hitl-private/tree/carrier-orbit-no-range-20261022)。
 
 | 實驗紀錄 | 內容 |
